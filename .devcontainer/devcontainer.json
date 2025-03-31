@@ -1,0 +1,30 @@
+{
+    "name": "Node.js Discord Bot Development",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {},
+        "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "GitHub.copilot",
+                "gamunu.vscode-yarn",
+                "Prisma.prisma",
+                "alexcvzz.vscode-sqlite"
+            ],
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/bash",
+                "typescript.preferences.importModuleSpecifier": "non-relative",
+                "typescript.preferences.importModuleSpecifierEnding": "js",
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.fixAll.eslint": "explicit"
+                },
+            }
+        }
+    },
+    "postCreateCommand": "npm install"
+}
