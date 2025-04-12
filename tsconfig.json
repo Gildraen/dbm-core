@@ -3,7 +3,7 @@
         "module": "Node18",
         "target": "ES2024",
         "moduleResolution": "node16",
-        "outDir": "./dist",
+        "outDir": "./lib",
         "rootDir": "./src",
         "baseUrl": "./src",
         "declaration": true,

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import StartMigration from "@application/useCase/StartMigration.js";
 
 class MigrateCLI {

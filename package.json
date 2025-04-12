@@ -1,18 +1,25 @@
 {
   "name": "@dbm/core",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "lib/index.js",
   "license": "MIT",
-  "typings": "lib",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    }
+  },
   "type": "module",
   "bin": {
-    "dbm-migrate": "dist/infrastructure/cli/migrate.js"
+    "dbm-migrate": "node lib/infrastructure/cli/migrate.js"
   },
   "scripts": {
     "compile": "yarn clean && yarn build",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf lib",
     "build": "tsc && tsc-alias",
-    "dbm-migrate": "node dist/infrastructure/cli/migrate.js"
+    "migrate": "dbm-migrate",
+    "postinstall": "yarn build && chmod +x lib/infrastructure/cli/migrate.js"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
@@ -27,5 +34,8 @@
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.13",
     "typescript": "^5.8.2"
-  }
+  },
+  "files": [
+    "lib"
+  ]
 }
