@@ -1,11 +1,3 @@
-import type ModuleInterface from "domain/interface/ModuleInterface.js";
-// import Module from "infrastructure/module/module.js";
-import RegisterModuleUseCase from "@application/useCase/RegisterModule.js";
+import { type ModuleInterface } from "domain/interface/ModuleInterface.js";
 
-// const baseModule = new Module();
-// const registerUseCase = new RegisterModuleUseCase(baseModule);
-// await registerUseCase.execute();
-
-// console.log("✅ BaseModule registered with core-lib!");
-
-export { RegisterModuleUseCase, type ModuleInterface };
+export { type ModuleInterface };
