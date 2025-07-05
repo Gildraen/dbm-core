@@ -1,13 +1,11 @@
 import { z } from "zod";
 
-export const configSchema = z.object({
-    modules: z.array(
-        z.object({
-            name: z.string().min(1, "Module name is required"),
-            enabled: z.boolean().default(false),
-            settings: z.record(z.any()).optional(),
-        })
-    ),
-});
+export const ModuleConfigSchema = z.object({
+    enabled: z.boolean(),
+    settings: z.record(z.unknown()), // settings obligatoires mais libres
+}).strict();
 
-export type ConfigType = z.infer<typeof configSchema>;
+export const ConfigSchema = z.record(ModuleConfigSchema);
+
+export type ConfigType = z.infer<typeof ConfigSchema>;
+export type ModuleConfigType = z.infer<typeof ModuleConfigSchema>;

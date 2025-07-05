@@ -1,4 +1,4 @@
-import type ModuleInterface from "domain/interface/ModuleInterface.js";
+import { type ModuleInterface } from "domain/interface/ModuleInterface.js";
 
 class Migrator {
     private static instance: Migrator;
@@ -27,7 +27,7 @@ class Migrator {
     public async migrateModules(): Promise<void> {
         for (const mod of this.modules) {
             const migrationName = this.generateMigrationName(mod.name);
-            await mod.migrate(migrationName);
+            await mod.migrate();
         }
     }
 }

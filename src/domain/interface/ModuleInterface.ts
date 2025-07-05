@@ -1,4 +1,4 @@
-export default interface ModuleInterface {
+export interface ModuleInterface {
     name: string;
-    migrate(migrationName: string): Promise<void>;
+    migrate(): Promise<void>;
 }
