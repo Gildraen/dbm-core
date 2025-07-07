@@ -10,5 +10,4 @@ export type MigrationReport = {
     totalDurationMs: number;
     successCount: number;
     failureCount: number;
-    skippedCount: number;
 };

@@ -7,5 +7,5 @@ export const ModuleConfigSchema = z.object({
 
 export const ConfigSchema = z.record(ModuleConfigSchema);
 
-export type ConfigType = z.infer<typeof ConfigSchema>;
 export type ModuleConfigType = z.infer<typeof ModuleConfigSchema>;
+export type ConfigType = Record<string, ModuleConfigType>;

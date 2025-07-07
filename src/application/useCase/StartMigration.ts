@@ -1,9 +1,14 @@
-import { config } from "domain/config/Config.js";
-import { ModuleLoader } from "domain/module/ModuleLoader.js";
-import type { MigrationReport, ModuleMigrationResult } from "domain/types/MigrationReport.js";
+import { config } from "app/domain/config/Config.js";
+import { loadModule } from "app/domain/module/ModuleLoader.js";
+import type { MigrationReport, ModuleMigrationResult } from "app/domain/types/MigrationReport.js";
 
 export default class StartMigration {
-    constructor(private readonly dryRun: boolean = false) { }
+    private readonly dryRun: boolean;
+
+    constructor(dryRun: boolean = false) {
+
+        this.dryRun = dryRun;
+    }
 
     public async execute(): Promise<MigrationReport> {
         const results: ModuleMigrationResult[] = [];
@@ -13,20 +18,16 @@ export default class StartMigration {
 
         for (const { name: moduleName } of enabledModules) {
             try {
-                const loaded = await ModuleLoader.load(moduleName);
+                const loaded = await loadModule(moduleName);
 
-                if (loaded.migrate) {
-                    if (this.dryRun) {
-                        results.push({ moduleName, status: "success" });
-                    } else {
-                        const start = Date.now();
-                        await loaded.migrate();
-                        const duration = Date.now() - start;
-
-                        results.push({ moduleName, status: "success", durationMs: duration });
-                    }
+                if (this.dryRun) {
+                    results.push({ moduleName, status: "success" });
                 } else {
-                    results.push({ moduleName, status: "skipped" });
+                    const start = Date.now();
+                    await loaded.migrate();
+                    const duration = Date.now() - start;
+
+                    results.push({ moduleName, status: "success", durationMs: duration });
                 }
             } catch (error) {
                 results.push({
@@ -44,7 +45,6 @@ export default class StartMigration {
             totalDurationMs: totalDuration,
             successCount: results.filter((r) => r.status === "success").length,
             failureCount: results.filter((r) => r.status === "failed").length,
-            skippedCount: results.filter((r) => r.status === "skipped").length,
         };
     }
 }

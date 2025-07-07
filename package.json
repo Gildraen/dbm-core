@@ -12,19 +12,20 @@
   },
   "type": "module",
   "bin": {
-    "dbm-migrate": "lib/infrastructure/cli/migrate.js"
+    "dbm-migrate": "lib/src/infrastructure/cli/migrate.js"
   },
   "scripts": {
     "compile": "yarn clean && yarn build",
     "clean": "rm -rf lib",
     "build": "tsc && tsc-alias",
-    "dbm-migrate": "node lib/infrastructure/cli/migrate.js",
-    "postinstall": "yarn build && chmod +x lib/infrastructure/cli/migrate.js",
+    "dbm-migrate": "node lib/src/infrastructure/cli/migrate.js",
+    "postinstall": "yarn build && chmod +x lib/src/infrastructure/cli/migrate.js",
     "zip": "rm -f discord-bot-core-export.zip && zip -r discord-bot-core-export.zip . -x \"node_modules/*\" \".git/*\" \"lib/*\" \"*.log\" \".env\" \".DS_Store\"",
     "test": "vitest run",
     "test:watch": "vitest --printConsoleTrace=true --silent=false --disable-console-intercept",
     "test:update": "vitest -u",
-    "lint": "tsc --noEmit && eslint . --ext .ts,.js"
+    "lint:check": "eslint",
+    "lint": "eslint --fix"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
@@ -42,12 +43,12 @@
     "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
+    "jiti": "^2.4.2",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.13",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.33.0",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.4"
   },

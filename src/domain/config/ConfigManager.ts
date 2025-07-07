@@ -1,4 +1,4 @@
-import fs, { cp } from "fs";
+import fs from "fs";
 import path from "path";
 import { ConfigSchema, type ConfigType, type ModuleConfigType } from "./ConfigSchema.js";
 
@@ -19,26 +19,26 @@ export class ConfigManager {
         let rawData: string;
         try {
             rawData = fs.readFileSync(CONFIG_PATH, "utf-8");
-        } catch (error) {
+        } catch {
             throw new Error("Unreadable configuration file");
         }
 
         let parsedJson: unknown;
         try {
             parsedJson = JSON.parse(rawData);
-        } catch (error) {
+        } catch {
             throw new Error("Invalid JSON in configuration file");
         }
 
         try {
             return ConfigSchema.parse(parsedJson);
-        } catch (validationError) {
+        } catch {
             throw new Error("Invalid configuration structure");
         }
     }
 
     public getModuleConfig(moduleName: string): ModuleConfigType {
-        if (!this.config[moduleName]) {
+        if (!Object.hasOwn(this.config, moduleName)) {
             throw new Error(`Module config for "${moduleName}" not found.`);
         }
         return this.config[moduleName];
@@ -50,7 +50,7 @@ export class ConfigManager {
 
     public getEnabledModules(): Array<{ name: string; config: ModuleConfigType }> {
         return Object.entries(this.config)
-            .filter(([_, cfg]) => cfg.enabled)
+            .filter(([, cfg]) => cfg.enabled)
             .map(([name, cfg]) => ({ name, config: cfg }));
     }
 }

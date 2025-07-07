@@ -5,7 +5,7 @@
         "moduleResolution": "node16",
         "outDir": "./lib",
         "rootDir": ".",
-        "baseUrl": "./src",
+        "baseUrl": ".",
         "declaration": true,
         "noImplicitAny": true,
         "sourceMap": true,
@@ -18,12 +18,13 @@
         "verbatimModuleSyntax": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
+        "erasableSyntaxOnly": true,
         "types": [
             "vitest"
         ],
         "paths": {
-            "@application/*": [
-                "application/*"
+            "app/*": [
+                "src/*"
             ]
         }
     },
