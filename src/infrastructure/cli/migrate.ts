@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import StartMigration from "@application/useCase/StartMigration.js";
+import StartMigration from "app/application/useCase/StartMigration.js";
 import fs from "fs";
 import path from "path";
 
@@ -18,7 +18,7 @@ class StartMigrationCli {
         }
     }
 
-    public async run(): Promise<void> {
+    public async run() {
         const useCase = new StartMigration(this.dryRun);
         const report = await useCase.execute();
 
@@ -36,7 +36,7 @@ class StartMigrationCli {
     }
 }
 
-new StartMigrationCli().run().catch((err) => {
+new StartMigrationCli().run().catch((err: unknown) => {
     console.error('[MIGRATION FAILED]', err);
     process.exit(1);
 });

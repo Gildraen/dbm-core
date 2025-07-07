@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 import fs from "fs";
-import { ConfigManager } from "domain/config/ConfigManager.js";
+import { ConfigManager } from "app/domain/config/ConfigManager.js";
 vi.mock("fs");
 
 describe("ConfigManager", () => {
@@ -19,8 +19,8 @@ describe("ConfigManager", () => {
         const mod = configManager.getModuleConfig("example-module");
 
         expect(mod).toBeDefined();
-        expect(mod?.enabled).toBe(true);
-        expect(mod?.settings).toEqual({});
+        expect(mod.enabled).toBe(true);
+        expect(mod.settings).toEqual({});
     });
     test("throws if config file is missing", () => {
         (fs.existsSync as Mock).mockReturnValue(false);

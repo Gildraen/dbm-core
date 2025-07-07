@@ -1,15 +1,14 @@
 import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
-import StartMigration from "application/useCase/StartMigration.js";
-import { ModuleLoader } from "domain/module/ModuleLoader.js";
-import { config } from "domain/config/Config.js";
+import StartMigration from "app/application/useCase/StartMigration.js";
+import { config } from "app/domain/config/Config.js";
+import { loadModule } from "app/domain/module/ModuleLoader.js";
+import type { MigrationReport } from "app/domain/types/MigrationReport.js";
 
-vi.mock("domain/module/ModuleLoader.js", async () => ({
-    ModuleLoader: {
-        load: vi.fn(),
-    },
+vi.mock("app/domain/module/ModuleLoader.js", () => ({
+    loadModule: vi.fn(),
 }));
 
-vi.mock("domain/config/Config.js", async () => {
+vi.mock("app/domain/config/Config.js", () => {
     return {
         config: {
             getEnabledModules: vi.fn(),
@@ -29,7 +28,7 @@ describe("StartMigration", () => {
             { name: "test-module", config: { enabled: true, settings: {} } },
         ]);
 
-        (ModuleLoader.load as Mock).mockResolvedValue(mockModule);
+        (loadModule as Mock).mockResolvedValue(mockModule);
 
         const migration = new StartMigration(true); // dryRun: true
         const report = await migration.execute();
@@ -48,7 +47,7 @@ describe("StartMigration", () => {
             { name: "test-module", config: { enabled: true, settings: {} } },
         ]);
 
-        (ModuleLoader.load as Mock).mockResolvedValue(mockModule);
+        (loadModule as Mock).mockResolvedValue(mockModule);
 
         const migration = new StartMigration(false);
         const report = await migration.execute();
@@ -58,30 +57,12 @@ describe("StartMigration", () => {
         expect(report.results[0]).toHaveProperty("durationMs");
     });
 
-    test("skips module with no migrate method", async () => {
-        const mockModule = { name: "no-migrate" };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "no-migrate", config: {} },
-        ]);
-
-        (ModuleLoader.load as Mock).mockResolvedValue(mockModule);
-
-        const migration = new StartMigration();
-        const report = await migration.execute();
-
-        expect(report.results[0]).toEqual({
-            moduleName: "no-migrate",
-            status: "skipped",
-        });
-    });
-
     test("handles error during module load", async () => {
         (config.getEnabledModules as Mock).mockReturnValue([
             { name: "broken-module", config: {} },
         ]);
 
-        (ModuleLoader.load as Mock).mockRejectedValue(new Error("boom"));
+        (loadModule as Mock).mockRejectedValue(new Error("boom"));
 
         const migration = new StartMigration();
         const report = await migration.execute();
@@ -97,7 +78,7 @@ describe("StartMigration", () => {
             { name: "error-module", config: {} },
         ]);
 
-        (ModuleLoader.load as Mock).mockResolvedValue(mockModule);
+        (loadModule as Mock).mockResolvedValue(mockModule);
 
         const migration = new StartMigration();
         const report = await migration.execute();
@@ -113,38 +94,31 @@ describe("StartMigration", () => {
         (config.getEnabledModules as Mock).mockReturnValue([
             { name: "mod-ok", config: {} },
             { name: "mod-fail", config: {} },
-            { name: "mod-skip", config: {} },
         ]);
 
-        (ModuleLoader.load as Mock)
+        (loadModule as Mock)
             .mockResolvedValueOnce({ name: "mod-ok", migrate: vi.fn() })
             .mockResolvedValueOnce({ name: "mod-fail", migrate: vi.fn(() => { throw new Error("💥 fail") }) })
-            .mockResolvedValueOnce({ name: "mod-skip" });
 
         const start = new StartMigration(false);
-        const report = await start.execute();
+        const report: MigrationReport = await start.execute();
 
         expect(report).toMatchObject({
             results: [
                 {
                     moduleName: "mod-ok",
                     status: "success",
-                    durationMs: expect.any(Number),
+                    durationMs: expect.any(Number) as number,
                 },
                 {
                     moduleName: "mod-fail",
                     status: "failed",
                     error: "💥 fail",
                 },
-                {
-                    moduleName: "mod-skip",
-                    status: "skipped",
-                },
             ],
             successCount: 1,
             failureCount: 1,
-            skippedCount: 1,
-            totalDurationMs: expect.any(Number),
+            totalDurationMs: expect.any(Number) as number,
         });
     });
 
@@ -157,7 +131,6 @@ describe("StartMigration", () => {
         expect(report.results).toEqual([]);
         expect(report.successCount).toBe(0);
         expect(report.failureCount).toBe(0);
-        expect(report.skippedCount).toBe(0);
         expect(report.totalDurationMs).toBeGreaterThanOrEqual(0);
     });
 
@@ -168,7 +141,7 @@ describe("StartMigration", () => {
             { name: "no-config-module" },
         ]);
 
-        (ModuleLoader.load as Mock).mockResolvedValue(mockModule);
+        (loadModule as Mock).mockResolvedValue(mockModule);
 
         const migration = new StartMigration();
         const report = await migration.execute();
@@ -176,7 +149,7 @@ describe("StartMigration", () => {
         expect(report.results[0]).toEqual({
             moduleName: "no-config-module",
             status: "success",
-            durationMs: expect.any(Number),
+            durationMs: expect.any(Number) as number,
         });
     });
 });
