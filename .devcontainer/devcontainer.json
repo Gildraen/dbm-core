@@ -13,7 +13,7 @@
                 "GitHub.copilot",
                 "gamunu.vscode-yarn",
                 "Prisma.prisma",
-                "alexcvzz.vscode-sqlite"
+                "ms-vscode.vscode-eslint"
             ],
             "settings": {
                 "terminal.integrated.shell.linux": "/bin/bash",
@@ -22,7 +22,7 @@
                 "editor.formatOnSave": true,
                 "editor.codeActionsOnSave": {
                     "source.fixAll.eslint": "explicit"
-                },
+                }
             }
         }
     },
