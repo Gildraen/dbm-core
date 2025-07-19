@@ -16,7 +16,7 @@ const baseConfig: Linter.Config = {
     },
     linterOptions: {},
     plugins: {
-        // @ts-expect-error : https://github.com/typescript-eslint/typescript-eslint/issues/10899
+        // @ts-expect-error: https://github.com/typescript-eslint/typescript-eslint/issues/10899
         '@typescript-eslint': tsPlugin
     },
     rules: {
