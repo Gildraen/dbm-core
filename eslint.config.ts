@@ -16,12 +16,13 @@ const baseConfig: Linter.Config = {
     },
     linterOptions: {},
     plugins: {
-        '@typescript-eslint': tsPlugin as unknown // https://github.com/typescript-eslint/typescript-eslint/issues/10899
+        // @ts-expect-error: https://github.com/typescript-eslint/typescript-eslint/issues/10899
+        '@typescript-eslint': tsPlugin
     },
     rules: {
         '@typescript-eslint/await-thenable': 'error',
         '@typescript-eslint/ban-ts-comment': ['error', {
-            'ts-expect-error': true,
+            'ts-expect-error': 'allow-with-description',
             'ts-check': true,
         }],
         '@typescript-eslint/no-array-constructor': 'error',
@@ -109,7 +110,8 @@ const strictConfig: Linter.Config = {
     },
     linterOptions: {},
     plugins: {
-        '@typescript-eslint': tsPlugin as unknown // https://github.com/typescript-eslint/typescript-eslint/issues/10899
+        // @ts-expect-error: https://github.com/typescript-eslint/typescript-eslint/issues/10899
+        '@typescript-eslint': tsPlugin
     },
     rules: {
         '@typescript-eslint/no-confusing-void-expression': 'error',
