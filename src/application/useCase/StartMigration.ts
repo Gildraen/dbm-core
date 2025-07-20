@@ -1,13 +1,15 @@
+import { PrismaClient } from "@prisma/client";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/module/ModuleLoader.js";
 import type { MigrationReport, ModuleMigrationResult } from "app/domain/types/MigrationReport.js";
 
 export default class StartMigration {
     private readonly dryRun: boolean;
+    private readonly prisma: PrismaClient;
 
     constructor(dryRun: boolean = false) {
-
         this.dryRun = dryRun;
+        this.prisma = new PrismaClient();
     }
 
     public async execute(): Promise<MigrationReport> {
@@ -24,7 +26,11 @@ export default class StartMigration {
                     results.push({ moduleName, status: "success" });
                 } else {
                     const start = Date.now();
-                    await loaded.migrate();
+                    await loaded.migrate({
+                        prisma: this.prisma,
+                        dryRun: this.dryRun,
+                    });
+
                     const duration = Date.now() - start;
 
                     results.push({ moduleName, status: "success", durationMs: duration });

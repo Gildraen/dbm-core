@@ -2,8 +2,7 @@
     "name": "Node.js Discord Bot Development",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
     "features": {
-        "ghcr.io/devcontainers/features/node:1": {},
-        "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {}
+        "ghcr.io/devcontainers/features/node:1": {}
     },
     "customizations": {
         "vscode": {
@@ -25,6 +24,5 @@
                 }
             }
         }
-    },
-    "postCreateCommand": "npm install"
+    }
 }
