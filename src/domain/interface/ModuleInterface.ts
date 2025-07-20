@@ -1,4 +1,6 @@
+import type { MigrationContext } from "app/domain/types/MigrationContext.js";
+
 export interface ModuleInterface {
     name: string;
-    migrate(): Promise<unknown>;
+    migrate(ctx: MigrationContext): Promise<unknown>;
 }
