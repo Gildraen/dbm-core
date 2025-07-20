@@ -2,7 +2,8 @@ import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
 import StartMigration from "app/application/useCase/StartMigration.js";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/module/ModuleLoader.js";
-import type { MigrationReport } from "app/domain/types/MigrationReport.js";
+import type { OperationReport } from "app/domain/types/OperationReport.js";
+import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
 vi.mock("app/domain/module/ModuleLoader.js", () => ({
     loadModule: vi.fn(),
@@ -34,9 +35,12 @@ describe("StartMigration", () => {
         const report = await migration.execute();
 
         expect(report.results).toEqual([
-            { moduleName: "test-module", status: "success" },
+            { moduleName: "test-module", status: OperationStatus.SUCCESS, durationMs: expect.any(Number) },
         ]);
-        expect(mockModule.migrate).not.toHaveBeenCalled();
+        expect(mockModule.migrate).toHaveBeenCalledWith({
+            prisma: expect.any(Object),
+            dryRun: true,
+        });
     });
 
     test("executes real migration and records duration", async () => {
@@ -53,7 +57,7 @@ describe("StartMigration", () => {
         const report = await migration.execute();
 
         expect(mockMigrate).toHaveBeenCalled();
-        expect(report.results[0].status).toBe("success");
+        expect(report.results[0].status).toBe(OperationStatus.SUCCESS);
         expect(report.results[0]).toHaveProperty("durationMs");
     });
 
@@ -67,7 +71,7 @@ describe("StartMigration", () => {
         const migration = new StartMigration();
         const report = await migration.execute();
 
-        expect(report.results[0].status).toBe("failed");
+        expect(report.results[0].status).toBe(OperationStatus.FAILED);
         expect(report.results[0].error).toMatch(/boom/);
     });
 
@@ -85,7 +89,7 @@ describe("StartMigration", () => {
 
         expect(report.results[0]).toEqual({
             moduleName: "error-module",
-            status: "failed",
+            status: OperationStatus.FAILED,
             error: "💥 migration error",
         });
     });
@@ -101,18 +105,18 @@ describe("StartMigration", () => {
             .mockResolvedValueOnce({ name: "mod-fail", migrate: vi.fn(() => { throw new Error("💥 fail") }) })
 
         const start = new StartMigration(false);
-        const report: MigrationReport = await start.execute();
+        const report: OperationReport = await start.execute();
 
         expect(report).toMatchObject({
             results: [
                 {
                     moduleName: "mod-ok",
-                    status: "success",
+                    status: OperationStatus.SUCCESS,
                     durationMs: expect.any(Number) as number,
                 },
                 {
                     moduleName: "mod-fail",
-                    status: "failed",
+                    status: OperationStatus.FAILED,
                     error: "💥 fail",
                 },
             ],
@@ -148,7 +152,7 @@ describe("StartMigration", () => {
 
         expect(report.results[0]).toEqual({
             moduleName: "no-config-module",
-            status: "success",
+            status: OperationStatus.SUCCESS,
             durationMs: expect.any(Number) as number,
         });
     });

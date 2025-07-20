@@ -1,23 +1,19 @@
-import { PrismaClient } from "@prisma/client";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/module/ModuleLoader.js";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
-export default class StartMigration {
+export default class RegisterDiscordCommands {
     private readonly dryRun: boolean;
-    private readonly prisma: PrismaClient;
 
     constructor(dryRun: boolean = false) {
         this.dryRun = dryRun;
-        this.prisma = new PrismaClient();
     }
 
     public async execute(): Promise<OperationReport> {
         const results: OperationResult[] = [];
         const startGlobal = Date.now();
-
         const enabledModules = config.getEnabledModules();
 
         for (const { name: moduleName } of enabledModules) {
@@ -25,9 +21,8 @@ export default class StartMigration {
                 const loaded = await loadModule(moduleName);
 
                 const start = Date.now();
-                await loaded.migrate({
-                    prisma: this.prisma,
-                    dryRun: this.dryRun,
+                await loaded.register({
+                    dryRun: this.dryRun
                 });
                 const duration = Date.now() - start;
 

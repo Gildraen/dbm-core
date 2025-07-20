@@ -12,14 +12,15 @@
   },
   "type": "module",
   "bin": {
-    "dbm-migrate": "lib/src/infrastructure/cli/migrate.js"
+    "dbm-migrate": "lib/src/infrastructure/cli/migrate.js",
+    "dbm-register-commands": "lib/src/infrastructure/cli/register-commands.js"
   },
   "scripts": {
     "compile": "yarn clean && yarn build",
     "clean": "rm -rf lib",
     "build": "tsc && tsc-alias",
     "dbm-migrate": "node lib/src/infrastructure/cli/migrate.js",
-    "postinstall": "yarn build && chmod +x lib/src/infrastructure/cli/migrate.js",
+    "dbm-register-commands": "node lib/src/infrastructure/cli/register-commands.js",
     "zip": "rm -f discord-bot-core-export.zip && zip -r discord-bot-core-export.zip . -x \"node_modules/*\" \".git/*\" \"lib/*\" \"*.log\" \".env\" \".DS_Store\"",
     "test": "vitest run",
     "test:watch": "vitest --printConsoleTrace=true --silent=false --disable-console-intercept",
