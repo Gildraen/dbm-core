@@ -4,7 +4,7 @@ import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
-vi.mock("app/domain/module/ModuleLoader.js", () => ({
+vi.mock("app/domain/service/ModuleLoader.js", () => ({
     loadModule: vi.fn(),
 }));
 

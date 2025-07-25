@@ -24,7 +24,7 @@ describe("ConfigManager", () => {
     });
     test("throws if config file is missing", () => {
         (fs.existsSync as Mock).mockReturnValue(false);
-        expect(() => new ConfigManager()).toThrowErrorMatchingInlineSnapshot(`[Error: Missing configuration file: dbmconfig.json]`);
+        expect(() => new ConfigManager()).toThrowErrorMatchingInlineSnapshot(`[Error: Missing configuration file: .dbmrc.json]`);
     });
     test("throw on unreadable config file", () => {
         (fs.existsSync as Mock).mockReturnValue(true);

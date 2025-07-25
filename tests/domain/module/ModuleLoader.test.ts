@@ -1,9 +1,11 @@
-import { loadModule } from "app/domain/services/ModuleLoader.js";
+import { loadModule } from "app/domain/service/ModuleLoader.js";
+import { register } from "module";
 import { describe, expect, test, vi } from "vitest";
 
 vi.mock("valid-module", () => ({
     name: "valid-module",
     migrate: vi.fn(() => "Migration complete"),
+    register: vi.fn(() => "Registration complete"),
 }));
 
 vi.mock("missing-method-module", () => ({
@@ -27,7 +29,7 @@ describe("ModuleLoader", () => {
     test("fails if module doesn't exist", async () => {
         await expect(loadModule("non-existent-module"))
             .rejects
-            .toThrowErrorMatchingInlineSnapshot(`[Error: Failed to load module "non-existent-module": Cannot find package 'non-existent-module' imported from '/workspaces/core/src/domain/module/ModuleLoader.ts']`);
+            .toThrowErrorMatchingInlineSnapshot(`[Error: Failed to load module "non-existent-module": Cannot find package 'non-existent-module' imported from '/workspaces/core/src/domain/service/ModuleLoader.ts']`);
     });
 
     test("fails if module doesn't implement interface", async () => {
