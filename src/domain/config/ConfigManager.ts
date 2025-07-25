@@ -13,7 +13,7 @@ export class ConfigManager {
 
     private loadConfig(): ConfigType {
         if (!fs.existsSync(CONFIG_PATH)) {
-            throw new Error("Missing configuration file: dbmconfig.json");
+            throw new Error("Missing configuration file: .dbmrc.json");
         }
 
         let rawData: string;

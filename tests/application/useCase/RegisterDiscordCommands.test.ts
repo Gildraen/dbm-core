@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
 import RegisterDiscordCommands from "app/application/useCase/RegisterDiscordCommands.js";
 import { config } from "app/domain/config/Config.js";
-import { loadModule } from "app/domain/module/ModuleLoader.js";
+import { loadModule } from "app/domain/service/ModuleLoader.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
 vi.mock("app/domain/module/ModuleLoader.js", () => ({
@@ -23,8 +23,8 @@ describe("RegisterDiscordCommands", () => {
 
     test("calls register() on modules that have it", async () => {
         const mockRegister = vi.fn().mockResolvedValue(undefined);
-        const mockModule = { 
-            name: "test-module", 
+        const mockModule = {
+            name: "test-module",
             migrate: vi.fn(),
             register: mockRegister
         };
@@ -49,8 +49,8 @@ describe("RegisterDiscordCommands", () => {
     });
 
     test("handles modules with failing register method", async () => {
-        const mockModule = { 
-            name: "failing-register-module", 
+        const mockModule = {
+            name: "failing-register-module",
             migrate: vi.fn(),
             register: vi.fn().mockRejectedValue(new Error("Register not implemented"))
         };
@@ -86,8 +86,8 @@ describe("RegisterDiscordCommands", () => {
     });
 
     test("handles error during module registration", async () => {
-        const mockModule = { 
-            name: "error-module", 
+        const mockModule = {
+            name: "error-module",
             migrate: vi.fn(),
             register: vi.fn().mockRejectedValue(new Error("💥 registration error"))
         };
@@ -110,8 +110,8 @@ describe("RegisterDiscordCommands", () => {
 
     test("passes dryRun to module register method", async () => {
         const mockRegister = vi.fn().mockResolvedValue(undefined);
-        const mockModule = { 
-            name: "test-module", 
+        const mockModule = {
+            name: "test-module",
             migrate: vi.fn(),
             register: mockRegister
         };
@@ -137,13 +137,13 @@ describe("RegisterDiscordCommands", () => {
         ]);
 
         (loadModule as Mock)
-            .mockResolvedValueOnce({ 
-                name: "mod-success", 
+            .mockResolvedValueOnce({
+                name: "mod-success",
                 migrate: vi.fn(),
                 register: vi.fn().mockResolvedValue(undefined)
             })
-            .mockResolvedValueOnce({ 
-                name: "mod-fail", 
+            .mockResolvedValueOnce({
+                name: "mod-fail",
                 migrate: vi.fn(),
                 register: vi.fn().mockRejectedValue(new Error("💥 fail"))
             });

@@ -1,11 +1,11 @@
 import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
 import StartMigration from "app/application/useCase/StartMigration.js";
 import { config } from "app/domain/config/Config.js";
-import { loadModule } from "app/domain/module/ModuleLoader.js";
+import { loadModule } from "app/domain/service/ModuleLoader.jss";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
-vi.mock("app/domain/module/ModuleLoader.js", () => ({
+vi.mock("app/domain/service/ModuleLoader.js", () => ({
     loadModule: vi.fn(),
 }));
 

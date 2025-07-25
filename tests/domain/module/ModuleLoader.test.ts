@@ -1,4 +1,4 @@
-import { loadModule } from "app/domain/module/ModuleLoader.js";
+import { loadModule } from "app/domain/services/ModuleLoader.js";
 import { describe, expect, test, vi } from "vitest";
 
 vi.mock("valid-module", () => ({
