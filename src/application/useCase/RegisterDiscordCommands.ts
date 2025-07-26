@@ -1,5 +1,5 @@
 import { config } from "app/domain/config/Config.js";
-import { loadModule } from "app/domain/module/ModuleLoader.js";
+import { loadModule } from "app/domain/service/ModuleLoader.js";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
