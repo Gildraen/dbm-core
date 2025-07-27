@@ -112,6 +112,9 @@ jobs:
   promote:
     needs: validate-and-prepare
     uses: ./.github/workflows/reusable-release.yml
+    permissions:
+      contents: write
+      packages: write
     with:
       version: ${{ needs.validate-and-prepare.outputs.stable_version }}
       is_prerelease: false
