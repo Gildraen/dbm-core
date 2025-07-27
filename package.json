@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "lib/index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gildraen/discord-bot-modules-core.git"
+  },
   "types": "./lib/index.d.ts",
   "exports": {
     ".": {
