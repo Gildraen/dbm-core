@@ -28,7 +28,7 @@ describe("ModuleLoader", () => {
     test("fails if module doesn't exist", async () => {
         await expect(loadModule("non-existent-module"))
             .rejects
-            .toThrowErrorMatchingInlineSnapshot(`[Error: Failed to load module "non-existent-module": Cannot find package 'non-existent-module' imported from '/workspaces/core/src/domain/service/ModuleLoader.ts']`);
+            .toThrow(/Failed to load module "non-existent-module": Cannot find package 'non-existent-module'/);
     });
 
     test("fails if module doesn't implement interface", async () => {
