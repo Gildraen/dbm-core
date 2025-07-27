@@ -12,6 +12,16 @@ on:
           - patch
           - minor
           - major
+          - beta
+      next_version_type:
+        description: "Next version type (required for beta releases)"
+        required: false
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
       create_release:
         description: "Create GitHub release after tagging"
         required: true
@@ -58,8 +68,15 @@ jobs:
       - name: Calculate new version
         id: version
         run: |
-          # Get the latest release tag from GitHub (excluding pre-releases)
-          LATEST_RELEASE=$(gh release list --limit 1 --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          # Get the latest release tag from GitHub (excluding pre-releases for stable, including for beta)
+          if [ "${{ inputs.version_type }}" = "beta" ]; then
+            # For beta, get the latest release (including pre-releases)
+            LATEST_RELEASE=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+            LATEST_STABLE=$(gh release list --limit 1 --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          else
+            # For stable releases, exclude pre-releases
+            LATEST_RELEASE=$(gh release list --limit 1 --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          fi
 
           if [ -z "$LATEST_RELEASE" ]; then
             # No releases found, use package.json version as base
@@ -72,7 +89,48 @@ jobs:
           fi
 
           # Calculate new version based on input
-          if [ "${{ inputs.version_type }}" = "patch" ]; then
+          if [ "${{ inputs.version_type }}" = "beta" ]; then
+            # For beta releases, calculate next version based on next_version_type
+            if [ -z "$LATEST_STABLE" ]; then
+              BASE_VERSION=$(node -p "require('./package.json').version")
+            else
+              BASE_VERSION=${LATEST_STABLE#v}
+            fi
+            
+            # Calculate what the next stable version would be
+            if [ "${{ inputs.next_version_type }}" = "patch" ]; then
+              NEXT_STABLE=$(node -p "
+                const v = '$BASE_VERSION'.split('.');
+                v[2] = parseInt(v[2]) + 1;
+                v.join('.');
+              ")
+            elif [ "${{ inputs.next_version_type }}" = "minor" ]; then
+              NEXT_STABLE=$(node -p "
+                const v = '$BASE_VERSION'.split('.');
+                v[1] = parseInt(v[1]) + 1;
+                v[2] = 0;
+                v.join('.');
+              ")
+            elif [ "${{ inputs.next_version_type }}" = "major" ]; then
+              NEXT_STABLE=$(node -p "
+                const v = '$BASE_VERSION'.split('.');
+                v[0] = parseInt(v[0]) + 1;
+                v[1] = 0;
+                v[2] = 0;
+                v.join('.');
+              ")
+            fi
+            
+            # Check if there are existing beta versions for this next stable version
+            EXISTING_BETAS=$(gh release list --json tagName --jq ".[].tagName" | grep "^v${NEXT_STABLE}-beta" | wc -l || echo "0")
+            BETA_NUMBER=$((EXISTING_BETAS + 1))
+            NEW_VERSION="${NEXT_STABLE}-beta.${BETA_NUMBER}"
+            
+            echo "Base stable version: $BASE_VERSION"
+            echo "Next stable version: $NEXT_STABLE"
+            echo "Beta number: $BETA_NUMBER"
+            
+          elif [ "${{ inputs.version_type }}" = "patch" ]; then
             NEW_VERSION=$(node -p "
               const v = '$CURRENT_VERSION'.split('.');
               v[2] = parseInt(v[2]) + 1;
@@ -120,12 +178,31 @@ jobs:
             NOTES="${{ inputs.release_notes }}"
           else
             # Generate automatic release notes
-            NOTES="## What's Changed
+            if [ "${{ inputs.version_type }}" = "beta" ]; then
+              NOTES="## 🧪 Beta Release
+
+          This is a **beta release** for the upcoming \`${{ inputs.next_version_type }}\` version.
+
+          **⚠️ Pre-release Notice:** This version is for testing purposes. Use with caution in production.
+
+          ### What's Changed
+          $(git log v${{ steps.version.outputs.current_version }}..HEAD --pretty=format:"- %s (%h)" --no-merges 2>/dev/null || git log --oneline -10 --pretty=format:"- %s (%h)")
+
+          ### Testing
+          To install this beta version:
+          \`\`\`bash
+          npm install @gildraen/dbm-core@${{ steps.version.outputs.new_version }}
+          # or
+          yarn add @gildraen/dbm-core@${{ steps.version.outputs.new_version }}
+          \`\`\`"
+            else
+              NOTES="## What's Changed
 
           This is a ${{ inputs.version_type }} release from \`${{ steps.version.outputs.current_version }}\` to \`${{ steps.version.outputs.new_version }}\`.
 
           ### Recent Commits
           $(git log v${{ steps.version.outputs.current_version }}..HEAD --pretty=format:"- %s (%h)" --no-merges 2>/dev/null || git log --oneline -10 --pretty=format:"- %s (%h)")"
+            fi
           fi
 
           # Save to output (handle multiline)
@@ -136,10 +213,19 @@ jobs:
       - name: Create GitHub Release
         if: ${{ inputs.create_release }}
         run: |
-          gh release create "v${{ steps.version.outputs.new_version }}" \
-            --title "Release v${{ steps.version.outputs.new_version }}" \
-            --notes "${{ steps.release_notes.outputs.notes }}" \
-            --latest
+          if [ "${{ inputs.version_type }}" = "beta" ]; then
+            # Create pre-release for beta versions
+            gh release create "v${{ steps.version.outputs.new_version }}" \
+              --title "Release v${{ steps.version.outputs.new_version }}" \
+              --notes "${{ steps.release_notes.outputs.notes }}" \
+              --prerelease
+          else
+            # Create stable release
+            gh release create "v${{ steps.version.outputs.new_version }}" \
+              --title "Release v${{ steps.version.outputs.new_version }}" \
+              --notes "${{ steps.release_notes.outputs.notes }}" \
+              --latest
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -148,12 +234,24 @@ jobs:
           echo "## 🚀 Release Created Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** \`v${{ steps.version.outputs.new_version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Type:** ${{ inputs.version_type }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.version_type }}" = "beta" ]; then
+            echo "**Type:** Beta (${{ inputs.next_version_type }} pre-release)" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** Pre-release" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Type:** ${{ inputs.version_type }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** Stable release" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "**Previous:** \`v${{ steps.version.outputs.current_version }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ inputs.create_release }}" = "true" ]; then
-            echo "**GitHub Release:** Created automatically" >> $GITHUB_STEP_SUMMARY
-            echo "**Package Publishing:** Will trigger automatically" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ inputs.version_type }}" = "beta" ]; then
+              echo "**GitHub Release:** Created as pre-release" >> $GITHUB_STEP_SUMMARY
+              echo "**Package Publishing:** Beta package will be available" >> $GITHUB_STEP_SUMMARY
+              echo "**Install:** \`yarn add @gildraen/dbm-core@${{ steps.version.outputs.new_version }}\`" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**GitHub Release:** Created automatically" >> $GITHUB_STEP_SUMMARY
+              echo "**Package Publishing:** Will trigger automatically" >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "**GitHub Release:** Tag created only" >> $GITHUB_STEP_SUMMARY
             echo "**Next Step:** Go to [Releases](https://github.com/${{ github.repository }}/releases) to publish manually" >> $GITHUB_STEP_SUMMARY
