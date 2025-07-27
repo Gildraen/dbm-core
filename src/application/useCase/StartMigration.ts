@@ -1,17 +1,17 @@
-import { PrismaClient } from "@prisma/client";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
+import type { MigrationRepository } from "app/domain/interface/MigrationRepository.js";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
 export default class StartMigration {
     private readonly dryRun: boolean;
-    private readonly prisma: PrismaClient;
+    private readonly migrationRepository: MigrationRepository;
 
-    constructor(dryRun: boolean = false) {
+    constructor(migrationRepository: MigrationRepository, dryRun: boolean = false) {
+        this.migrationRepository = migrationRepository;
         this.dryRun = dryRun;
-        this.prisma = new PrismaClient();
     }
 
     public async execute(): Promise<OperationReport> {
@@ -26,7 +26,7 @@ export default class StartMigration {
 
                 const start = Date.now();
                 await loaded.migrate({
-                    prisma: this.prisma,
+                    prisma: this.migrationRepository.getPrismaClient(),
                     dryRun: this.dryRun,
                 });
                 const duration = Date.now() - start;
