@@ -2,6 +2,7 @@ import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
 import StartMigration from "app/application/useCase/StartMigration.js";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
+import type { MigrationRepository } from "app/domain/interface/MigrationRepository.js";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
@@ -18,8 +19,19 @@ vi.mock("app/domain/config/Config.js", () => {
 });
 
 describe("StartMigration", () => {
+    let mockRepository: MigrationRepository;
+    let mockPrismaClient: any;
+
     beforeEach(() => {
         vi.resetAllMocks();
+
+        // Create mock Prisma client
+        mockPrismaClient = {};
+
+        // Create mock repository
+        mockRepository = {
+            getPrismaClient: vi.fn().mockReturnValue(mockPrismaClient),
+        };
     });
 
     test("runs migrate() on a single module in dryRun mode", async () => {
@@ -31,14 +43,14 @@ describe("StartMigration", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const migration = new StartMigration(true); // dryRun: true
+        const migration = new StartMigration(mockRepository, true); // dryRun: true
         const report = await migration.execute();
 
         expect(report.results).toEqual([
             { moduleName: "test-module", status: OperationStatus.SUCCESS, durationMs: expect.any(Number) },
         ]);
         expect(mockModule.migrate).toHaveBeenCalledWith({
-            prisma: expect.any(Object),
+            prisma: mockPrismaClient,
             dryRun: true,
         });
     });
@@ -53,7 +65,7 @@ describe("StartMigration", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const migration = new StartMigration(false);
+        const migration = new StartMigration(mockRepository);
         const report = await migration.execute();
 
         expect(mockMigrate).toHaveBeenCalled();
@@ -68,7 +80,7 @@ describe("StartMigration", () => {
 
         (loadModule as Mock).mockRejectedValue(new Error("boom"));
 
-        const migration = new StartMigration();
+        const migration = new StartMigration(mockRepository);
         const report = await migration.execute();
 
         expect(report.results[0].status).toBe(OperationStatus.FAILED);
@@ -84,7 +96,7 @@ describe("StartMigration", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const migration = new StartMigration();
+        const migration = new StartMigration(mockRepository);
         const report = await migration.execute();
 
         expect(report.results[0]).toEqual({
@@ -104,7 +116,7 @@ describe("StartMigration", () => {
             .mockResolvedValueOnce({ name: "mod-ok", migrate: vi.fn() })
             .mockResolvedValueOnce({ name: "mod-fail", migrate: vi.fn(() => { throw new Error("💥 fail") }) })
 
-        const start = new StartMigration(false);
+        const start = new StartMigration(mockRepository);
         const report: OperationReport = await start.execute();
 
         expect(report).toMatchObject({
@@ -129,7 +141,7 @@ describe("StartMigration", () => {
     test("handles empty module list gracefully", async () => {
         (config.getEnabledModules as Mock).mockReturnValue([]);
 
-        const migration = new StartMigration();
+        const migration = new StartMigration(mockRepository);
         const report = await migration.execute();
 
         expect(report.results).toEqual([]);
@@ -147,7 +159,7 @@ describe("StartMigration", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const migration = new StartMigration();
+        const migration = new StartMigration(mockRepository);
         const report = await migration.execute();
 
         expect(report.results[0]).toEqual({
