@@ -1,6 +1,5 @@
 {
   "name": "@gildraen/dbm-core",
-  "version": "1.0.0",
   "main": "lib/index.js",
   "license": "MIT",
   "repository": {
