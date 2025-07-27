@@ -54,7 +54,7 @@ This project uses GitHub Actions for continuous integration and deployment to Gi
 
 1. Merge PR to `main` branch
 2. CI automatically publishes a beta version to GitHub Package Registry with timestamp
-3. Install with: `yarn add @gildraen/discord-bot-modules-core@beta --registry=https://npm.pkg.github.com`
+3. Install with: `yarn add @gildraen/dbm-core@beta --registry=https://npm.pkg.github.com`
 
 ### For Stable Release (Manual)
 
@@ -96,7 +96,7 @@ To install packages from GitHub Package Registry, users need to:
 2. Or install directly:
 
 ```bash
-yarn add @gildraen/discord-bot-modules-core --registry=https://npm.pkg.github.com
+yarn add @gildraen/dbm-core --registry=https://npm.pkg.github.com
 ```
 
 ## Package Scripts
