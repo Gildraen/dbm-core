@@ -18,17 +18,17 @@ jobs:
           node-version: "22"
           cache: "yarn"
           registry-url: "https://npm.pkg.github.com"
-          scope: "@dbm"
+          scope: "@gildraen"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      
+
       - name: Run tests
         run: yarn test
-      
+
       - name: Run linting
         run: yarn lint:check
-      
+
       - name: Build
         run: yarn build
 
