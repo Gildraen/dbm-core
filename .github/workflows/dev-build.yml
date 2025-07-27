@@ -1,11 +1,11 @@
-name: Beta Release
+name: Development Build
 
 on:
   push:
     branches: [main]
 
 jobs:
-  publish-beta:
+  publish-dev:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -15,7 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Fetch full history for proper versioning
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -38,29 +37,26 @@ jobs:
       - name: Build package
         run: yarn build
 
-      - name: Configure git
+      - name: Publish development version
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-      - name: Publish beta version
-        run: |
-          # Get current version and create beta version
+          # Get current version and create dev version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          BETA_VERSION="${CURRENT_VERSION}-beta.${TIMESTAMP}"
+          COMMIT_SHA=${GITHUB_SHA:0:7}
+          DEV_VERSION="${CURRENT_VERSION}-dev.${COMMIT_SHA}"
 
           # Update package.json version
-          yarn version --new-version $BETA_VERSION --no-git-tag-version
+          yarn version --new-version $DEV_VERSION --no-git-tag-version
 
-          # Publish with beta tag
-          yarn publish --tag beta
+          # Publish with dev tag
+          yarn publish --tag dev
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create beta release summary
+      - name: Create dev build summary
         run: |
-          echo "## 🧪 Beta Release Published" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔧 Development Build Published" >> $GITHUB_STEP_SUMMARY
           echo "Version: \`$(node -p "require('./package.json').version")\`" >> $GITHUB_STEP_SUMMARY
           echo "Package: \`$(node -p "require('./package.json').name")\`" >> $GITHUB_STEP_SUMMARY
-          echo "Install: \`yarn add $(node -p "require('./package.json').name")@beta --registry=https://npm.pkg.github.com\`" >> $GITHUB_STEP_SUMMARY
+          echo "Install: \`yarn add $(node -p "require('./package.json').name")@dev --registry=https://npm.pkg.github.com\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note**: This is an unstable development build. Use official releases for production."
