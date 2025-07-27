@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "yarn"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@dbm"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+
+      - name: Update version to match release tag
+        run: |
+          # Extract version from tag (removes 'v' prefix if present)
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION#v}
+
+          # Update package.json version
+          yarn version --new-version $VERSION --no-git-tag-version
+
+      - name: Publish to GitHub Package Registry
+        run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub release summary
+        run: |
+          echo "## 🚀 Published to GitHub Package Registry" >> $GITHUB_STEP_SUMMARY
+          echo "Version: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "Package: \`$(node -p "require('./package.json').name")\`" >> $GITHUB_STEP_SUMMARY
+          echo "Install: \`yarn add $(node -p "require('./package.json').name")@${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
