@@ -1,5 +1,5 @@
 {
-  "name": "@dbm/core",
+  "name": "@gildraen/discord-bot-modules-core",
   "version": "1.0.0",
   "main": "lib/index.js",
   "license": "MIT",
@@ -57,6 +57,7 @@
     "lib"
   ],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com",
+    "@gildraen:registry": "https://npm.pkg.github.com"
   }
 }
