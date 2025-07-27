@@ -105,6 +105,9 @@ jobs:
   release:
     needs: calculate-version
     uses: ./.github/workflows/reusable-release.yml
+    permissions:
+      contents: write
+      packages: write
     with:
       version: ${{ needs.calculate-version.outputs.new_version }}
       is_prerelease: false
