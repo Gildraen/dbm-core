@@ -1,0 +1,126 @@
+name: Reusable Release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to release (e.g., 1.2.3)"
+        required: true
+        type: string
+      is_prerelease:
+        description: "Whether this is a pre-release"
+        required: false
+        type: boolean
+        default: false
+      release_notes:
+        description: "Release notes content"
+        required: false
+        type: string
+        default: ""
+      target_commitish:
+        description: "Target commit/tag for the release"
+        required: false
+        type: string
+        default: ""
+      skip_build:
+        description: "Skip build, test, and lint steps"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run tests
+        if: ${{ !inputs.skip_build }}
+        run: yarn test
+
+      - name: Run linting
+        if: ${{ !inputs.skip_build }}
+        run: yarn lint:check
+
+      - name: Build package
+        if: ${{ !inputs.skip_build }}
+        run: yarn build
+
+      - name: Create and push tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          TAG_NAME="v${{ inputs.version }}"
+          
+          if [ -n "${{ inputs.target_commitish }}" ]; then
+            # Create tag pointing to specific commit/tag
+            if [[ "${{ inputs.target_commitish }}" =~ ^v.* ]]; then
+              # If target is a tag, get its commit
+              TARGET_COMMIT=$(git rev-list -n 1 "${{ inputs.target_commitish }}")
+            else
+              # If target is a commit
+              TARGET_COMMIT="${{ inputs.target_commitish }}"
+            fi
+            git tag "$TAG_NAME" $TARGET_COMMIT
+          else
+            # Create tag for current commit
+            git tag "$TAG_NAME"
+          fi
+
+          # Push tag
+          git push origin "$TAG_NAME"
+
+      - name: Create GitHub Release
+        run: |
+          TAG_NAME="v${{ inputs.version }}"
+          
+          if [ "${{ inputs.is_prerelease }}" = "true" ]; then
+            RELEASE_FLAGS="--prerelease"
+          else
+            RELEASE_FLAGS="--latest"
+          fi
+          
+          if [ -n "${{ inputs.target_commitish }}" ]; then
+            TARGET_FLAG="--target ${{ inputs.target_commitish }}"
+          else
+            TARGET_FLAG=""
+          fi
+
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --notes "${{ inputs.release_notes }}" \
+            $RELEASE_FLAGS \
+            $TARGET_FLAG
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create summary
+        run: |
+          echo "## 🚀 Release Created Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`v${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.is_prerelease }}" = "true" ]; then
+            echo "**Type:** Pre-release" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Type:** Stable release" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "**Install:** \`yarn add @gildraen/dbm-core@${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
