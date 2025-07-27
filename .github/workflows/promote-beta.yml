@@ -30,32 +30,32 @@ jobs:
         run: |
           BETA_VERSION="${{ inputs.beta_version }}"
           BETA_TAG="v${BETA_VERSION}"
-          
+
           # Check if the beta version exists
           if ! gh release view "$BETA_TAG" >/dev/null 2>&1; then
             echo "Error: Beta release $BETA_TAG not found"
             exit 1
           fi
-          
+
           # Check if it's actually a pre-release
           IS_PRERELEASE=$(gh release view "$BETA_TAG" --json isPrerelease --jq '.isPrerelease')
           if [ "$IS_PRERELEASE" != "true" ]; then
             echo "Error: $BETA_TAG is not a pre-release"
             exit 1
           fi
-          
+
           # Extract the stable version from beta (remove -beta.X suffix)
           STABLE_VERSION=$(echo "$BETA_VERSION" | sed 's/-beta\.[0-9]*$//')
-          
+
           # Check if stable version already exists
           STABLE_TAG="v${STABLE_VERSION}"
           if gh release view "$STABLE_TAG" >/dev/null 2>&1; then
             echo "Error: Stable release $STABLE_TAG already exists"
             exit 1
           fi
-          
+
           echo "Beta version $BETA_VERSION will be promoted to stable $STABLE_VERSION"
-          
+
           echo "stable_version=$STABLE_VERSION" >> $GITHUB_OUTPUT
           echo "beta_tag=$BETA_TAG" >> $GITHUB_OUTPUT
         env:
@@ -69,16 +69,16 @@ jobs:
           else
             # Get release notes from the beta release and adapt them
             BETA_NOTES=$(gh release view "${{ steps.validate.outputs.beta_tag }}" --json body --jq '.body' 2>/dev/null || echo "")
-            
+
             # Get the latest stable release to show changes
             LATEST_STABLE=$(gh release list --limit 1 --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
-            
+
             NOTES="## 🎉 Stable Release
 
           **This is the stable release of v${{ steps.validate.outputs.stable_version }}**, promoted from beta \`${{ inputs.beta_version }}\`.
 
           ### What's Changed"
-          
+
           if [ -n "$LATEST_STABLE" ]; then
             NOTES="$NOTES
           $(git log ${LATEST_STABLE}..${{ steps.validate.outputs.beta_tag }} --pretty=format:"- %s (%h)" --no-merges 2>/dev/null || echo "Changes from beta release")"
@@ -97,7 +97,7 @@ jobs:
           \`\`\`
 
           ---
-          
+
           ### Original Beta Release Notes:
           $BETA_NOTES"
           fi
@@ -117,5 +117,5 @@ jobs:
       is_prerelease: false
       release_notes: ${{ needs.validate-and-prepare.outputs.release_notes }}
       target_commitish: ${{ needs.validate-and-prepare.outputs.beta_tag }}
-      skip_build: true  # Skip build since we're using the beta build
+      skip_build: true # Skip build since we're using the beta build
     secrets: inherit
