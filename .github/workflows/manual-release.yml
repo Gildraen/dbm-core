@@ -26,6 +26,9 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     environment: release # Require approval for 'release' environment
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout code
