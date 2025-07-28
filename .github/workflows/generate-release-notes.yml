@@ -49,3 +49,9 @@ jobs:
       - name: Set output file path
         id: set-path
         run: echo "path=RELEASE_NOTES.md" >> $GITHUB_OUTPUT
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: RELEASE_NOTES.md
