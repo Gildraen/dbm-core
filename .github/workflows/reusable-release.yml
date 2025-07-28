@@ -12,11 +12,6 @@ on:
         required: false
         type: boolean
         default: false
-      release_notes:
-        description: "Release notes content"
-        required: false
-        type: string
-        default: ""
       target_commitish:
         description: "Target commit/tag for the release"
         required: false
@@ -64,6 +59,10 @@ jobs:
         if: ${{ !inputs.skip_build }}
         run: yarn build
 
+      - name: Generate release notes
+        uses: ./.github/workflows/release-note.yml
+        id: generate_notes
+
       - name: Create and push tag
         run: |
           git config --local user.email "action@github.com"
@@ -72,21 +71,16 @@ jobs:
           TAG_NAME="v${{ inputs.version }}"
 
           if [ -n "${{ inputs.target_commitish }}" ]; then
-            # Create tag pointing to specific commit/tag
             if [[ "${{ inputs.target_commitish }}" =~ ^v.* ]]; then
-              # If target is a tag, get its commit
               TARGET_COMMIT=$(git rev-list -n 1 "${{ inputs.target_commitish }}")
             else
-              # If target is a commit
               TARGET_COMMIT="${{ inputs.target_commitish }}"
             fi
             git tag "$TAG_NAME" $TARGET_COMMIT
           else
-            # Create tag for current commit
             git tag "$TAG_NAME"
           fi
 
-          # Push tag
           git push origin "$TAG_NAME"
 
       - name: Create GitHub Release
@@ -112,7 +106,7 @@ EOF
 
           gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
-            --notes-file RELEASE_NOTES.md \
+            --notes-file "${{ steps.generate_notes.outputs.release_notes_file }}" \
             ${RELEASE_FLAGS} \
             ${TARGET_FLAG}
         env:

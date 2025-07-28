@@ -1,0 +1,52 @@
+name: Generate Release Notes
+
+description: >
+  Extracts commit history since the previous tag and writes a markdown-formatted
+  changelog into a file `RELEASE_NOTES.md`, ready to be published by another job.
+
+on:
+  workflow_call:
+    outputs:
+      release_notes_file:
+        description: Path to the generated release notes file
+        value: release-notes-path
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    outputs:
+      release-notes-path: ${{ steps.set-path.outputs.path }}
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: get_previous_tag
+        run: |
+          PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | sed -n '2p')
+          echo "Previous tag: $PREV_TAG"
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes file
+        id: generate_notes
+        run: |
+          TAG_RANGE="${{ steps.get_previous_tag.outputs.prev_tag }}..HEAD"
+          OUTPUT_FILE=RELEASE_NOTES.md
+
+          echo "## What's Changed" > $OUTPUT_FILE
+          echo "" >> $OUTPUT_FILE
+          git log --pretty=format:"- %s (%h)" $TAG_RANGE >> $OUTPUT_FILE
+          echo "" >> $OUTPUT_FILE
+          echo "### Installation" >> $OUTPUT_FILE
+          echo '\`\`\`bash' >> $OUTPUT_FILE
+          echo "npm install @gildraen/dbm-core" >> $OUTPUT_FILE
+          echo "yarn add @gildraen/dbm-core" >> $OUTPUT_FILE
+          echo '\`\`\`' >> $OUTPUT_FILE
+
+      - name: Set output file path
+        id: set-path
+        run: echo "path=RELEASE_NOTES.md" >> $GITHUB_OUTPUT
