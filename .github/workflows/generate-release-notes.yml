@@ -9,14 +9,13 @@ on:
     outputs:
       release_notes_file:
         description: Path to the generated release notes file
-        value: release-notes-path
+        value: ${{ jobs.generate.outputs.release_notes_file }}
 
 jobs:
   generate:
     runs-on: ubuntu-latest
-
     outputs:
-      release-notes-path: ${{ steps.set-path.outputs.path }}
+      release_notes_file: ${{ steps.set-path.outputs.path }}
 
     steps:
       - name: Checkout full history
@@ -42,10 +41,10 @@ jobs:
           git log --pretty=format:"- %s (%h)" $TAG_RANGE >> $OUTPUT_FILE
           echo "" >> $OUTPUT_FILE
           echo "### Installation" >> $OUTPUT_FILE
-          echo '\`\`\`bash' >> $OUTPUT_FILE
+          echo '```bash' >> $OUTPUT_FILE
           echo "npm install @gildraen/dbm-core" >> $OUTPUT_FILE
           echo "yarn add @gildraen/dbm-core" >> $OUTPUT_FILE
-          echo '\`\`\`' >> $OUTPUT_FILE
+          echo '```' >> $OUTPUT_FILE
 
       - name: Set output file path
         id: set-path
