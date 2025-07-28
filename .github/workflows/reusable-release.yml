@@ -96,7 +96,7 @@ jobs:
           if [ "${{ inputs.is_prerelease }}" = "true" ]; then
             RELEASE_FLAGS="--prerelease"
           else
-            RELEASE_FLAGS="--latest"
+            RELEASE_FLAGS=""
           fi
 
           if [ -n "${{ inputs.target_commitish }}" ]; then
@@ -105,9 +105,14 @@ jobs:
             TARGET_FLAG=""
           fi
 
+          # Create release notes file to avoid shell interpretation issues
+          cat <<'EOF' > RELEASE_NOTES.md
+${{ inputs.release_notes }}
+EOF
+
           gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
-            --notes "${{ inputs.release_notes }}" \
+            --notes-file RELEASE_NOTES.md \
             ${RELEASE_FLAGS} \
             ${TARGET_FLAG}
         env:
