@@ -12,10 +12,6 @@ on:
           - patch
           - minor
           - major
-      release_notes:
-        description: "Custom release notes (optional)"
-        required: false
-        type: string
 
 jobs:
   calculate-version:
@@ -23,7 +19,6 @@ jobs:
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
       current_version: ${{ steps.version.outputs.current_version }}
-      release_notes: ${{ steps.notes.outputs.notes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,74 +28,25 @@ jobs:
       - name: Calculate new version
         id: version
         run: |
-          # Get the latest stable release
           LATEST_RELEASE=$(gh release list --limit 1 --exclude-pre-releases --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
-
           if [ -z "$LATEST_RELEASE" ]; then
-            # No releases found, use package.json version as base
             CURRENT_VERSION=$(node -p "require('./package.json').version")
-            echo "No releases found, using package.json version: $CURRENT_VERSION"
           else
-            # Remove 'v' prefix if present
             CURRENT_VERSION=${LATEST_RELEASE#v}
-            echo "Latest release: $LATEST_RELEASE (version: $CURRENT_VERSION)"
           fi
 
-          # Calculate new version based on input
           if [ "${{ inputs.version_type }}" = "patch" ]; then
-            NEW_VERSION=$(node -p "
-              const v = '$CURRENT_VERSION'.split('.');
-              v[2] = parseInt(v[2]) + 1;
-              v.join('.');
-            ")
+            NEW_VERSION=$(node -p "const v = '$CURRENT_VERSION'.split('.'); v[2] = +v[2] + 1; v.join('.') ")
           elif [ "${{ inputs.version_type }}" = "minor" ]; then
-            NEW_VERSION=$(node -p "
-              const v = '$CURRENT_VERSION'.split('.');
-              v[1] = parseInt(v[1]) + 1;
-              v[2] = 0;
-              v.join('.');
-            ")
+            NEW_VERSION=$(node -p "const v = '$CURRENT_VERSION'.split('.'); v[1] = +v[1] + 1; v[2] = 0; v.join('.') ")
           elif [ "${{ inputs.version_type }}" = "major" ]; then
-            NEW_VERSION=$(node -p "
-              const v = '$CURRENT_VERSION'.split('.');
-              v[0] = parseInt(v[0]) + 1;
-              v[1] = 0;
-              v[2] = 0;
-              v.join('.');
-            ")
+            NEW_VERSION=$(node -p "const v = '$CURRENT_VERSION'.split('.'); v[0] = +v[0] + 1; v[1] = 0; v[2] = 0; v.join('.') ")
           fi
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "New version will be: $NEW_VERSION"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate release notes
-        id: notes
-        run: |
-          if [ -n "${{ inputs.release_notes }}" ]; then
-            NOTES="${{ inputs.release_notes }}"
-          else
-            NOTES="## What's Changed
-
-          This is a ${{ inputs.version_type }} release from \`${{ steps.version.outputs.current_version }}\` to \`${{ steps.version.outputs.new_version }}\`.
-
-          ### Recent Commits
-          $(git log v${{ steps.version.outputs.current_version }}..HEAD --pretty=format:"- %s (%h)" --no-merges 2>/dev/null || git log --oneline -10 --pretty=format:"- %s (%h)")
-
-          ### Installation
-          \`\`\`bash
-          npm install @gildraen/dbm-core@${{ steps.version.outputs.new_version }}
-          # or
-          yarn add @gildraen/dbm-core@${{ steps.version.outputs.new_version }}
-          \`\`\`"
-          fi
-
-          # Save to output (handle multiline)
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
   release:
     needs: calculate-version
@@ -111,5 +57,4 @@ jobs:
     with:
       version: ${{ needs.calculate-version.outputs.new_version }}
       is_prerelease: false
-      release_notes: ${{ needs.calculate-version.outputs.release_notes }}
     secrets: inherit
