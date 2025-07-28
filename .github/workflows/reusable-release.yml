@@ -24,7 +24,11 @@ on:
         default: false
 
 jobs:
+  generate-notes:
+    uses: ./.github/workflows/generate-release-notes.yml
+
   release:
+    needs: generate-notes
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -58,10 +62,6 @@ jobs:
       - name: Build package
         if: ${{ !inputs.skip_build }}
         run: yarn build
-
-      - name: Generate release notes
-        uses: ./.github/workflows/generate-release-notes.yml
-        id: generate_notes
 
       - name: Create and push tag
         run: |
@@ -101,7 +101,7 @@ jobs:
 
           gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
-            --notes-file "${{ steps.generate_notes.outputs.release_notes_file }}" \
+            --notes-file "${{ needs.generate-notes.outputs.release_notes_file }}" \
             $RELEASE_FLAGS $TARGET_FLAG
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
