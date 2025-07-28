@@ -108,8 +108,8 @@ jobs:
           gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
             --notes "${{ inputs.release_notes }}" \
-            $RELEASE_FLAGS \
-            $TARGET_FLAG
+            ${RELEASE_FLAGS} \
+            ${TARGET_FLAG}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
