@@ -1,0 +1,14 @@
+// Discord Bot Core - Base Schema  
+// This schema provides the basic Prisma client setup for module coordination.
+// Each module package manages its own database schema independently.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// No core models needed - modules manage their own schemas

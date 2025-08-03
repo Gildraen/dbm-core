@@ -3,12 +3,13 @@ import { loadModule } from "app/domain/service/ModuleLoader.js";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
+import type { Client } from "discord.js";
 
-export default class RegisterDiscordCommands {
-    private readonly dryRun: boolean;
+export class SetupModuleHandlers {
+    private readonly client: Client;
 
-    constructor(dryRun: boolean = false) {
-        this.dryRun = dryRun;
+    constructor(client: Client) {
+        this.client = client;
     }
 
     public async execute(): Promise<OperationReport> {
@@ -21,9 +22,14 @@ export default class RegisterDiscordCommands {
                 const loaded = await loadModule(moduleName);
 
                 const start = Date.now();
-                await loaded.register?.({
-                    dryRun: this.dryRun
-                });
+                try {
+                    loaded.setupHandlers?.(this.client);
+                } catch (handlerError) {
+                    throw new Error(
+                        `Error in setupHandlers for module "${moduleName}": ` +
+                        (handlerError instanceof Error ? handlerError.message : String(handlerError))
+                    );
+                }
                 const duration = Date.now() - start;
 
                 results.push({
@@ -36,7 +42,7 @@ export default class RegisterDiscordCommands {
                 results.push({
                     moduleName,
                     status: OperationStatus.FAILED,
-                    error: error instanceof Error ? error.message : String(error),
+                    error: error instanceof Error ? error.message : String(error)
                 });
             }
         }

@@ -25,7 +25,7 @@ export default class StartMigration {
                 const loaded = await loadModule(moduleName);
 
                 const start = Date.now();
-                await loaded.migrate({
+                await loaded.migrate?.({
                     prisma: this.migrationRepository.getPrismaClient(),
                     dryRun: this.dryRun,
                 });

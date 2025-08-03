@@ -2,11 +2,28 @@
   "name": "@gildraen/dbm-core",
   "main": "lib/index.js",
   "version": "0.0.0",
+  "description": "A TypeScript library for building Discord bot migration and module management systems using Clean Architecture principles",
+  "keywords": [
+    "discord",
+    "bot",
+    "migration",
+    "module",
+    "management",
+    "typescript",
+    "clean-architecture",
+    "prisma",
+    "cli"
+  ],
+  "author": "Gildraen",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/Gildraen/discord-bot-modules-core.git"
   },
+  "bugs": {
+    "url": "https://github.com/Gildraen/discord-bot-modules-core/issues"
+  },
+  "homepage": "https://github.com/Gildraen/discord-bot-modules-core#readme",
   "types": "./lib/index.d.ts",
   "exports": {
     ".": {
@@ -35,6 +52,7 @@
   "dependencies": {
     "@prisma/client": "^6.5.0",
     "ajv": "^8.17.1",
+    "discord.js": "^14.21.0",
     "findup-sync": "^5.0.0",
     "prisma": "^6.5.0",
     "zod": "^3.24.2"

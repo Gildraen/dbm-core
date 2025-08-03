@@ -1,1 +1,8 @@
-{}
+{
+  "example-module": {
+    "enabled": false,
+    "settings": {
+      "description": "Example module - disabled by default"
+    }
+  }
+}
