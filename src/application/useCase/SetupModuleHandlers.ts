@@ -22,15 +22,13 @@ export class SetupModuleHandlers {
                 const loaded = await loadModule(moduleName);
 
                 const start = Date.now();
-                if (loaded.setupHandlers) {
-                    try {
-                        loaded.setupHandlers(this.client);
-                    } catch (handlerError) {
-                        throw new Error(
-                            `Error in setupHandlers for module "${moduleName}": ` +
-                            (handlerError instanceof Error ? handlerError.message : String(handlerError))
-                        );
-                    }
+                try {
+                    loaded.setupHandlers?.(this.client);
+                } catch (handlerError) {
+                    throw new Error(
+                        `Error in setupHandlers for module "${moduleName}": ` +
+                        (handlerError instanceof Error ? handlerError.message : String(handlerError))
+                    );
                 }
                 const duration = Date.now() - start;
 
