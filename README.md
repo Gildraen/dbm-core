@@ -163,7 +163,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-```
-
-```

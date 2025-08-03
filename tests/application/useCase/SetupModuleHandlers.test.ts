@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Client } from "discord.js";
-import SetupModuleHandlers from "app/application/useCase/SetupModuleHandlers.js";
+import { SetupModuleHandlers } from "app/application/useCase/SetupModuleHandlers.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
@@ -84,7 +84,7 @@ describe("SetupModuleHandlers", () => {
         expect(result.results[0]).toEqual({
             moduleName: "failing-module",
             status: OperationStatus.FAILED,
-            error: "Handler setup failed"
+            error: "Error in setupHandlers for module \"failing-module\": Handler setup failed"
         });
         expect(result.successCount).toBe(0);
         expect(result.failureCount).toBe(1);

@@ -5,7 +5,7 @@ import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 import type { Client } from "discord.js";
 
-export default class SetupModuleHandlers {
+export class SetupModuleHandlers {
     private readonly client: Client;
 
     constructor(client: Client) {
@@ -23,7 +23,14 @@ export default class SetupModuleHandlers {
 
                 const start = Date.now();
                 if (loaded.setupHandlers) {
-                    loaded.setupHandlers(this.client);
+                    try {
+                        loaded.setupHandlers(this.client);
+                    } catch (handlerError) {
+                        throw new Error(
+                            `Error in setupHandlers for module "${moduleName}": ` +
+                            (handlerError instanceof Error ? handlerError.message : String(handlerError))
+                        );
+                    }
                 }
                 const duration = Date.now() - start;
 
