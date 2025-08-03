@@ -22,15 +22,18 @@ I CANNOT and MUST NOT:
 - ❌ Create pull requests directly
 - ❌ Merge pull requests
 - ❌ Publish packages or releases
+- ❌ **Commit PR messages to the repository** (they are for GitHub PR creation only)
 
 ## 📝 PR Creation Process
 
 When helping with PR creation:
 
 1. **Analyze changes**: Review git diff and modified files
-2. **Generate PR content**: Create title and description
-3. **Provide instructions**: Give user the content to copy-paste
+2. **Generate PR content**: Create title and description (provide as text, never commit to repository)
+3. **Provide instructions**: Give user the content to copy-paste into GitHub
 4. **Let user handle**: User creates and manages the actual PR
+
+**Important**: PR messages should never be committed to the repository - they are exclusively for GitHub PR creation.
 
 ## 🏷️ PR Title Format
 
