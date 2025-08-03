@@ -11,7 +11,7 @@ description: "Pull Request creation guidelines and AI assistant boundaries"
 
 As an AI assistant, I can:
 
-- ✅ Create commits locally
+- ✅ Create commits locally **ONLY when explicitly requested by user**
 - ✅ Analyze diffs and changes
 - ✅ Generate PR titles and descriptions
 - ✅ Suggest code improvements
@@ -23,6 +23,30 @@ I CANNOT and MUST NOT:
 - ❌ Merge pull requests
 - ❌ Publish packages or releases
 - ❌ **Commit PR messages to the repository** (they are for GitHub PR creation only)
+- ❌ **Make commits without explicit user request** (always ask first)
+
+## 🔄 Commit Guidelines
+
+- **Ask first**: Always ask user before creating any commits
+- **Wait for approval**: Never commit automatically, even for obvious fixes
+- **User-driven**: Commits should only happen when user explicitly requests them
+- **Explain changes**: Describe what will be committed before doing it
+
+## 🔍 Getting Fresh PR Information
+
+When analyzing PRs, GitHub's main conversation page may show cached information. For current status:
+
+- **✅ Use `/files` tab**: Shows real-time file changes and accurate commit count
+- **✅ Use `/commits` tab**: Shows complete, current commit history
+- **❌ Avoid main conversation tab**: Often cached/stale for commit counts and reviews
+
+## 🔄 Consistency Verification
+
+When making improvements to code patterns:
+
+- **Check similar files**: If updating one file, verify similar files follow same patterns
+- **Maintain consistency**: Apply same coding standards across similar components
+- **Test thoroughly**: Run full test suite after consistency changes
 
 ## 📝 PR Creation Process
 

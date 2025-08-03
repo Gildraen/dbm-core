@@ -21,11 +21,9 @@ export default class RegisterDiscordCommands {
                 const loaded = await loadModule(moduleName);
 
                 const start = Date.now();
-                if (loaded.register) {
-                    await loaded.register({
-                        dryRun: this.dryRun
-                    });
-                }
+                await loaded.register?.({
+                    dryRun: this.dryRun
+                });
                 const duration = Date.now() - start;
 
                 results.push({
