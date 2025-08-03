@@ -1,0 +1,19 @@
+{
+  "example-module": {
+    "enabled": true,
+    "settings": {
+      "description": "This is an example module configuration",
+      "feature1": true,
+      "feature2": false,
+      "customValue": "example"
+    }
+  },
+  "another-module": {
+    "enabled": false,
+    "settings": {
+      "timeout": 5000,
+      "retries": 3,
+      "logLevel": "info"
+    }
+  }
+}
