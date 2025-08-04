@@ -1,0 +1,57 @@
+name: Publish to Registry
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: "Version to publish (e.g., 1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@gildraen"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build package
+        run: yarn build
+
+      - name: Update version to match release tag
+        run: |
+          VERSION=${{ inputs.version }}
+          yarn version --new-version $VERSION --no-git-tag-version
+
+      - name: Publish to GitHub Package Registry
+        run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create publish summary
+        run: |
+          echo "## 📦 Package Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Package:** \`$(node -p "require('./package.json').name")\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** GitHub Package Registry" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "yarn add @gildraen/dbm-core@${{ inputs.version }} --registry=https://npm.pkg.github.com" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

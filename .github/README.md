@@ -15,57 +15,76 @@ This project uses GitHub Actions for continuous integration and deployment to Gi
 
 - **test**: Runs linting, tests, and builds on all PRs and main pushes
 
-### 2. Beta Release Workflow (`.github/workflows/beta.yml`)
+### 2. Beta Release Workflow (`.github/workflows/beta-release.yml`)
 
 **Triggers:**
 
-- Push to `main` branch only
+- Manual trigger via GitHub UI (Actions tab)
 
 **Jobs:**
 
-- **publish-beta**: Publishes beta versions to GitHub Package Registry with full CI checks
+- **create-beta-release**: Creates beta GitHub releases and publishes beta packages to GitHub Package Registry
 
-### 3. Manual Release Workflow (`.github/workflows/manual-release.yml`)
+### 3. Manual Stable Release Workflow (`.github/workflows/stable-release.yml`)
 
 **Triggers:**
 - Manual trigger via GitHub UI (Actions tab)
 
 **Inputs:**
 - **Version type**: patch, minor, or major
-- **Create release**: Whether to create GitHub release automatically
-- **Release notes**: Custom release notes (optional, auto-generated if empty)
 
 **Jobs:**
-- **create-release**: Runs full CI, calculates version, creates tag, and optionally creates GitHub release
+- **calculate-version**: Calculates the next version number
+- **release**: Creates GitHub release and publishes package using reusable workflows
 
-### 4. Release Workflow (`.github/workflows/release.yml`)
+### 4. Reusable Release Workflow (`.github/workflows/reusable-release.yml`)
+
+**Purpose:** Core release workflow called by other workflows
+
+**Jobs:**
+- **generate-notes**: Generates release notes
+- **release**: Creates GitHub release and tag
+- **trigger-publish**: Calls the publish workflow to upload package
+
+### 5. Publish to Registry Workflow (`.github/workflows/publish-to-registry.yml`)
+
+**Purpose:** Reusable workflow for publishing packages
+
+**Jobs:**
+- **publish**: Builds and publishes package to GitHub Package Registry
+
+### 6. Release Backup Workflow (`.github/workflows/release.yml`)
 
 **Triggers:**
 
-- GitHub release is published
+- GitHub release is published (backup/fallback)
 
 **Jobs:**
 
-- **publish**: Publishes stable version to GitHub Package Registry with the release tag version
+- **publish**: Backup package publishing with duplicate detection
 
 ## Release Process
 
-### For Beta Testing (Automatic)
+### For Beta Testing (Manual)
 
-1. Merge PR to `main` branch
-2. CI automatically publishes a beta version to GitHub Package Registry with timestamp
-3. Install with: `yarn add @gildraen/dbm-core@beta --registry=https://npm.pkg.github.com`
+1. Go to your repository's **Actions** tab
+2. Select **"Beta Release"** workflow
+3. Click **"Run workflow"**
+4. Choose the next version type (patch/minor/major)
+5. The workflow will create a GitHub pre-release and publish the package to GitHub Package Registry
+6. Install with: `yarn add @gildraen/dbm-core@<version>-beta.X --registry=https://npm.pkg.github.com`
 
 ### For Stable Release (Manual)
 
 **Option 1: GitHub UI (Recommended)**
 1. Go to your repository's **Actions** tab
-2. Select **"Manual Release"** workflow
+2. Select **"Manual Stable Release"** workflow
 3. Click **"Run workflow"**
 4. Choose version type (patch/minor/major)
-5. Optionally add custom release notes
-6. Click **"Run workflow"**
-7. The workflow will automatically publish to GitHub Package Registry
+5. The workflow will automatically:
+   - Create a GitHub release 
+   - Publish the package to GitHub Package Registry
+   - Provide installation instructions
 
 **Option 2: Command Line**
 1. Use the release script: `./scripts/release.sh [patch|minor|major]`
@@ -74,9 +93,9 @@ This project uses GitHub Actions for continuous integration and deployment to Gi
    - Calculate the new version (don't modify package.json)
    - Create and push a tag: `git tag v1.2.3 && git push origin v1.2.3`
 3. Go to GitHub releases and publish the created tag
-4. GitHub Action will automatically publish to GitHub Package Registry
+4. The reusable release workflow will handle package publishing automatically, with backup fallback
 
-**Note**: The main branch is never modified during releases. Version updates happen only in the GitHub Action during publishing.
+**Note**: The main branch is never modified during releases. Version updates happen only during package publishing.
 
 ## Required Secrets
 
