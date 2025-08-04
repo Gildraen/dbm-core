@@ -111,7 +111,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create summary
+      - name: Create release summary
         run: |
           echo "## 🚀 Release Created Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -121,4 +121,16 @@ jobs:
           else
             echo "**Type:** Stable release" >> $GITHUB_STEP_SUMMARY
           fi
-          echo "**Install:** \`yarn add @gildraen/dbm-core@${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** \`v${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⏳ **Next:** Publishing package to registry..." >> $GITHUB_STEP_SUMMARY
+
+  trigger-publish:
+    needs: release
+    uses: ./.github/workflows/publish-to-registry.yml
+    permissions:
+      contents: read
+      packages: write
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit
