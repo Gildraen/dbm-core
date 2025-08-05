@@ -3,6 +3,7 @@ import RegisterDiscordCommands from "app/application/useCase/RegisterDiscordComm
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
+import type { Client } from "discord.js";
 
 vi.mock("app/domain/service/ModuleLoader.js", () => ({
     loadModule: vi.fn(),
@@ -17,8 +18,15 @@ vi.mock("app/domain/config/Config.js", () => {
 });
 
 describe("RegisterDiscordCommands", () => {
+    let mockClient: Client;
+
     beforeEach(() => {
         vi.resetAllMocks();
+        // Create a mock Discord client
+        mockClient = {
+            isReady: vi.fn().mockReturnValue(true),
+            destroy: vi.fn(),
+        } as unknown as Client;
     });
 
     test("calls register() on modules that have it", async () => {
@@ -35,16 +43,17 @@ describe("RegisterDiscordCommands", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const registration = new RegisterDiscordCommands(false);
+        const registration = new RegisterDiscordCommands(mockClient, false);
         const report = await registration.execute();
 
         expect(mockRegister).toHaveBeenCalledWith({
-            dryRun: false
+            commandTool: expect.any(Object)
         });
         expect(report.results).toEqual([
             { moduleName: "test-module", status: OperationStatus.SUCCESS, durationMs: expect.any(Number) },
+            { moduleName: "discord-api-registration", status: OperationStatus.SUCCESS, durationMs: expect.any(Number) }
         ]);
-        expect(report.successCount).toBe(1);
+        expect(report.successCount).toBe(2);
         expect(report.failureCount).toBe(0);
     });
 
@@ -61,12 +70,12 @@ describe("RegisterDiscordCommands", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const registration = new RegisterDiscordCommands();
+        const registration = new RegisterDiscordCommands(mockClient);
         const report = await registration.execute();
 
         expect(report.results[0].status).toBe(OperationStatus.FAILED);
         expect(report.results[0].error).toMatch(/Register not implemented/);
-        expect(report.successCount).toBe(0);
+        expect(report.successCount).toBe(1); // Discord registration still succeeds
         expect(report.failureCount).toBe(1);
     });
 
@@ -77,7 +86,7 @@ describe("RegisterDiscordCommands", () => {
 
         (loadModule as Mock).mockRejectedValue(new Error("boom"));
 
-        const registration = new RegisterDiscordCommands();
+        const registration = new RegisterDiscordCommands(mockClient);
         const report = await registration.execute();
 
         expect(report.results[0].status).toBe(OperationStatus.FAILED);
@@ -98,7 +107,7 @@ describe("RegisterDiscordCommands", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const registration = new RegisterDiscordCommands();
+        const registration = new RegisterDiscordCommands(mockClient);
         const report = await registration.execute();
 
         expect(report.results[0]).toEqual({
@@ -122,11 +131,11 @@ describe("RegisterDiscordCommands", () => {
 
         (loadModule as Mock).mockResolvedValue(mockModule);
 
-        const registration = new RegisterDiscordCommands(true);
+        const registration = new RegisterDiscordCommands(mockClient, true);
         await registration.execute();
 
         expect(mockRegister).toHaveBeenCalledWith({
-            dryRun: true
+            commandTool: expect.any(Object)
         });
     });
 
@@ -148,22 +157,24 @@ describe("RegisterDiscordCommands", () => {
                 register: vi.fn().mockRejectedValue(new Error("💥 fail"))
             });
 
-        const registration = new RegisterDiscordCommands();
+        const registration = new RegisterDiscordCommands(mockClient);
         const report = await registration.execute();
 
-        expect(report.successCount).toBe(1);
+        expect(report.successCount).toBe(2); // One successful module, one successful Discord registration
         expect(report.failureCount).toBe(1);
-        expect(report.results).toHaveLength(2);
+        expect(report.results).toHaveLength(3); // mod-success, mod-fail, discord-api-registration
     });
 
     test("handles empty module list gracefully", async () => {
         (config.getEnabledModules as Mock).mockReturnValue([]);
 
-        const registration = new RegisterDiscordCommands();
+        const registration = new RegisterDiscordCommands(mockClient);
         const report = await registration.execute();
 
-        expect(report.results).toEqual([]);
-        expect(report.successCount).toBe(0);
+        expect(report.results).toEqual([
+            { moduleName: "discord-api-registration", status: OperationStatus.SUCCESS, durationMs: expect.any(Number) }
+        ]);
+        expect(report.successCount).toBe(1); // Only Discord registration happens
         expect(report.failureCount).toBe(0);
     });
 });
