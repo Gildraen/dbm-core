@@ -84,10 +84,25 @@ export class EconomyModule implements ModuleInterface {
   }
 
   // Optional: Register Discord slash commands
-  async register({ dryRun }) {
-    if (!dryRun) {
-      // Register /balance, /daily commands with Discord API
-    }
+  async register({ commandTool }) {
+    // ✅ NEW: Use CommandRegistrationTool for safe command declaration
+    commandTool.addSlashCommand(
+      'balance',
+      'Check your economy balance',
+      new SlashCommandBuilder()
+        .setName('balance')
+        .setDescription('Check your economy balance')
+    );
+    
+    commandTool.addSlashCommand(
+      'daily',
+      'Claim your daily coins',
+      new SlashCommandBuilder()
+        .setName('daily')
+        .setDescription('Claim your daily coins')
+    );
+    
+    return { commands: ['balance', 'daily'] };
   }
 
   // Optional: Set up Discord event handlers
@@ -122,7 +137,7 @@ export const economyModule = new EconomyModule();
 interface ModuleInterface {
   name: string;
   migrate?(context: { prisma: PrismaClient; dryRun: boolean }): Promise<void>;
-  register?(context: { dryRun: boolean }): Promise<void>;
+  register?(context: { commandTool: CommandRegistrationTool }): Promise<void>;
   setupHandlers?(client: Client): void;
 }
 
@@ -142,10 +157,19 @@ import {
   RegisterDiscordCommands,
   SetupModuleHandlers,
 } from "@gildraen/dbm-core";
+import { Client, GatewayIntentBits } from "discord.js";
+
+// Create Discord client
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
 
 // Programmatic usage
 const migrationService = new StartMigration(repository);
-const report = await migrationService.execute();
+const migrationReport = await migrationService.execute();
+
+const commandService = new RegisterDiscordCommands(client);
+const commandReport = await commandService.execute();
 ```
 
 ## 🧪 Development
