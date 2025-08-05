@@ -57,7 +57,10 @@ description: "Project vision and architectural principles learned through intera
 
 ### Standards & Preferences
 
-- **Package Manager**: Always use `yarn` in documentation, never `npm`
+- **Package Manager**: 🚨 **ALWAYS use `yarn` - NEVER `npm`** 🚨
+  - Terminal commands: `yarn build`, `yarn test`, `yarn install`
+  - Documentation examples: Must show `yarn` commands only
+  - AI assistants: Must use `yarn` in all terminal operations
 - **Documentation**: Consistency across all markdown files is crucial
 - **Testing**: All tests should pass, maintain high coverage
 - **Commit Style**: Conventional commits with clear scopes

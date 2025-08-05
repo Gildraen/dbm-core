@@ -5,7 +5,15 @@ description: "Pull Request creation guidelines and AI assistant boundaries"
 
 # Pull Request Guidelines
 
-## 🚫 AI Assistant Boundaries
+## � Package Manager Requirement
+
+**ALWAYS use `yarn` - NEVER use `npm`**
+
+- ✅ Terminal commands: `yarn build`, `yarn test`, `yarn lint`
+- ❌ Never use: `npm run build`, `npm test`, `npm install`
+- This applies to ALL terminal operations, verification commands, and documentation
+
+## �🚫 AI Assistant Boundaries
 
 **NEVER push, merge, or publish changes directly.**
 

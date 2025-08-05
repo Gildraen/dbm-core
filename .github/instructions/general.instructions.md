@@ -23,6 +23,17 @@ The project follows Clean Architecture with three main layers:
 - ESLint for code linting
 - GitHub Package Registry with @gildraen scope
 
+## Package Manager Requirements
+
+🚨 **CRITICAL**: Always use `yarn` - NEVER use `npm`
+
+- ✅ **Terminal commands**: `yarn build`, `yarn test`, `yarn install`
+- ✅ **Documentation**: All examples must show `yarn` commands
+- ✅ **Scripts**: Reference `yarn` in package.json scripts
+- ❌ **Never use**: `npm run`, `npm test`, `npm install`, etc.
+
+This is a strict project standard that must be followed in all contexts.
+
 ## Development Principles
 
 - Follow Clean Architecture dependency rules (Domain ← Application ← Infrastructure)
