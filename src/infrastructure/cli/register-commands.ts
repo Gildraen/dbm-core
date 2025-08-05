@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import RegisterDiscordCommands from "app/application/useCase/RegisterDiscordCommands.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
 
@@ -25,31 +26,52 @@ class RegisterDiscordCommandsCli {
             console.log("🔍 Running in dry-run mode (no actual registration)");
         }
 
-        const useCase = new RegisterDiscordCommands(this.dryRun);
-        const report = await useCase.execute();
+        // Create Discord client for command registration
+        const client = new Client({
+            intents: [GatewayIntentBits.Guilds], // Minimal intents for command registration
+        });
 
-        console.log("\nCommand registration report:");
-        console.log(`✅ Successful modules: ${report.successCount}`);
-        console.log(`❌ Failed modules: ${report.failureCount}`);
+        // Login to Discord if not in dry-run mode
+        if (!this.dryRun) {
+            const token = process.env.DISCORD_TOKEN;
+            if (!token) {
+                throw new Error("DISCORD_TOKEN environment variable is required for command registration");
+            }
+            await client.login(token);
+        }
 
-        console.log("\nDetailed results:");
-        console.log(JSON.stringify(report, null, 2));
+        try {
+            const useCase = new RegisterDiscordCommands(client, this.dryRun);
+            const report = await useCase.execute();
 
-        if (this.outputPath) {
-            try {
-                fs.writeFileSync(this.outputPath, JSON.stringify(report, null, 2));
-                console.log(`📝 Report saved to: ${this.outputPath}`);
-            } catch (err) {
-                console.error("❌ Failed to write registration report:", err);
+            console.log("\nCommand registration report:");
+            console.log(`✅ Successful modules: ${report.successCount}`);
+            console.log(`❌ Failed modules: ${report.failureCount}`);
+
+            console.log("\nDetailed results:");
+            console.log(JSON.stringify(report, null, 2));
+
+            if (this.outputPath) {
+                try {
+                    fs.writeFileSync(this.outputPath, JSON.stringify(report, null, 2));
+                    console.log(`📝 Report saved to: ${this.outputPath}`);
+                } catch (err) {
+                    console.error("❌ Failed to write registration report:", err);
+                }
+            }
+
+            if (report.failureCount > 0) {
+                console.error("\n❌ Some modules failed to register commands");
+                process.exit(1);
+            }
+
+            console.log("\n✅ Discord command registration completed successfully!");
+        } finally {
+            // Clean up Discord client connection
+            if (!this.dryRun && client.isReady()) {
+                client.destroy();
             }
         }
-
-        if (report.failureCount > 0) {
-            console.error("\n❌ Some modules failed to register commands");
-            process.exit(1);
-        }
-
-        console.log("\n✅ Discord command registration completed successfully!");
     }
 }
 
