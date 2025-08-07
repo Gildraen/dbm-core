@@ -37,46 +37,46 @@ export interface MessageContextMenu {
     execute(interaction: MessageContextMenuCommandInteraction): Promise<unknown>;
 }
 
-// Select Menu Interfaces
-export interface StringSelectHandler {
+// Select Menu Event Listeners
+export interface StringSelectListener {
     customId: string;
     handle(interaction: StringSelectMenuInteraction): Promise<unknown>;
 }
 
-export interface UserSelectHandler {
+export interface UserSelectListener {
     customId: string;
     handle(interaction: UserSelectMenuInteraction): Promise<unknown>;
 }
 
-export interface RoleSelectHandler {
+export interface RoleSelectListener {
     customId: string;
     handle(interaction: RoleSelectMenuInteraction): Promise<unknown>;
 }
 
-export interface ChannelSelectHandler {
+export interface ChannelSelectListener {
     customId: string;
     handle(interaction: ChannelSelectMenuInteraction): Promise<unknown>;
 }
 
-export interface MentionableSelectHandler {
+export interface MentionableSelectListener {
     customId: string;
     handle(interaction: MentionableSelectMenuInteraction): Promise<unknown>;
 }
 
-// Autocomplete Interface
-export interface AutocompleteHandler {
+// Autocomplete Event Listener
+export interface AutocompleteListener {
     commandName: string;
     handle(interaction: AutocompleteInteraction): Promise<unknown>;
 }
 
-// General Interaction Handler Interface
-export interface InteractionHandler {
+// General Interaction Event Listener
+export interface InteractionListener {
     setup(client: Client): void;
 }
 
-// Discord Event Interface
-export interface EventHandler {
-    handle(...args: any[]): Promise<unknown>;
+// Discord Event Listener
+export interface EventListener<K extends keyof ClientEvents = keyof ClientEvents> {
+    handle(client: Client, ...args: ClientEvents[K]): Promise<unknown>;
 }
 
 // Event metadata for decorators

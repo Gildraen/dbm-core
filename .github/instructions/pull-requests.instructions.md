@@ -33,12 +33,33 @@ I CANNOT and MUST NOT:
 - ❌ **Commit PR messages to the repository** (they are for GitHub PR creation only)
 - ❌ **Make commits without explicit user request** (always ask first)
 
+## 🤝 Community Merge Strategy
+
+**ALWAYS use merge commits (not squash) for community recognition**
+
+### Why Merge Commits Over Squash
+- 🏆 **Individual Attribution**: Every contributor gets proper credit for their commits
+- 📚 **Educational History**: Development process remains visible for learning
+- 🐛 **Debugging Benefits**: Individual commits help identify when issues were introduced
+- 📊 **Contribution Metrics**: Maintains accurate GitHub contribution graphs
+- 🤝 **Community Engagement**: Contributors see their work properly recognized
+
+### Commit Quality Standards
+- **Atomic commits**: One logical change per commit
+- **Conventional format**: All commits must follow conventional commit format
+- **Clean progression**: Commits should tell the story of development
+- **Local cleanup**: Squash trivial commits (typos, review fixes) locally before pushing
+
 ## 🔄 Commit Guidelines
+
+**🚨 CRITICAL: NO AUTO-COMMITS**
 
 - **Ask first**: Always ask user before creating any commits
 - **Wait for approval**: Never commit automatically, even for obvious fixes
 - **User-driven**: Commits should only happen when user explicitly requests them
 - **Explain changes**: Describe what will be committed before doing it
+- **Respect user control**: Honor explicit instructions like "do not commit if I don't say so"
+- **Quality focus**: Help ensure commits meet community standards before creation
 
 ## 🔍 Getting Fresh PR Information
 

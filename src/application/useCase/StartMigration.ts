@@ -5,7 +5,7 @@ import type { OperationReport } from "app/domain/types/OperationReport.js";
 import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 
-export default class StartMigration {
+export class StartMigration {
     private readonly dryRun: boolean;
     private readonly migrationRepository: MigrationRepository;
 

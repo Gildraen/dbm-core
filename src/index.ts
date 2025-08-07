@@ -1,37 +1,39 @@
 import { type ModuleInterface } from "app/domain/interface/ModuleInterface.js";
-import StartMigration from "app/application/useCase/StartMigration.js";
-import RegisterDiscordCommands from "app/application/useCase/RegisterDiscordCommands.js";
-import { SetupModuleHandlers } from "app/application/useCase/SetupModuleHandlers.js";
-import { CommandRegistrationTool } from "app/domain/service/CommandRegistrationTool.js";
+import { type MigrationContext } from "app/domain/types/MigrationContext.js";
+
+// Decorator imports
 import {
     SlashCommand,
-    InteractionHandler,
     UserContextMenu,
     MessageContextMenu,
-    StringSelectHandler,
-    UserSelectHandler,
-    RoleSelectHandler,
-    ChannelSelectHandler,
-    MentionableSelectHandler,
-    AutocompleteHandler,
-    EventHandler
+    InteractionListener,
+    StringSelectListener,
+    UserSelectListener,
+    RoleSelectListener,
+    ChannelSelectListener,
+    MentionableSelectListener,
+    AutocompleteListener,
+    EventListener
 } from "app/infrastructure/decorator/index.js";
 
-export { 
+// Public API for external module developers
+export {
+    // Core interface for module development
     type ModuleInterface,
-    StartMigration,
-    RegisterDiscordCommands,
-    SetupModuleHandlers,
-    CommandRegistrationTool,
+
+    // Types needed for module development
+    type MigrationContext,
+
+    // Decorators for module developers
     SlashCommand,
-    InteractionHandler,
     UserContextMenu,
     MessageContextMenu,
-    StringSelectHandler,
-    UserSelectHandler,
-    RoleSelectHandler,
-    ChannelSelectHandler,
-    MentionableSelectHandler,
-    AutocompleteHandler,
-    EventHandler
+    InteractionListener,
+    StringSelectListener,
+    UserSelectListener,
+    RoleSelectListener,
+    ChannelSelectListener,
+    MentionableSelectListener,
+    AutocompleteListener,
+    EventListener
 };

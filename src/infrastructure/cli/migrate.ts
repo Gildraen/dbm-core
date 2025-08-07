@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { PrismaClient } from "@prisma/client";
-import StartMigration from "app/application/useCase/StartMigration.js";
+import { StartMigration } from "app/application/useCase/StartMigration.js";
 import { PrismaMigrationRepository } from "app/infrastructure/repository/PrismaMigrationRepository.js";
 import fs from "fs";
 import path from "path";

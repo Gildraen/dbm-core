@@ -41,3 +41,26 @@ This is a strict project standard that must be followed in all contexts.
 - Use path mapping: `app/*` maps to `src/*`
 - Write comprehensive unit and integration tests
 - Mock only external dependencies, test domain logic directly
+
+## Export Guidelines
+
+**CRITICAL**: Only export what external module developers truly need in `src/index.ts`
+
+### ✅ **What TO Export (Module Developer Essentials)**
+- **ModuleInterface**: Core interface that modules must implement
+- **Decorators**: All decorators for annotating handlers (`@SlashCommand`, `@EventListener`, etc.)
+
+### ❌ **What NOT TO Export (Internal Implementation)**
+- **Use Cases**: Application orchestration classes (`StartMigration`, `RegisterDiscordCommands`, `SetupModuleHandlers`)
+- **Repository Interfaces**: Internal abstractions (`CommandRepository`, `ListenerRepository`)
+- **Infrastructure Implementations**: Concrete implementations (`DiscordCommandRepository`, `DiscordListenerRepository`)
+- **Domain Services**: Business logic classes (`ListenerSetupService`, `CommandRegistrationTool`)
+- **Configuration Classes**: Internal config management
+- **Type Definitions**: Internal type definitions
+
+### 📝 **Rationale**
+- **Module-focused API**: External developers only build modules, not orchestrate the core system
+- **Minimal surface area**: Reduces complexity and maintenance burden
+- **Clear purpose**: Library is for creating modules, not for building alternative core systems
+- **Hide complexity**: All orchestration and infrastructure stays internal
+- **Future-proof**: Core system can evolve without breaking module developers

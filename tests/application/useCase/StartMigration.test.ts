@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
-import StartMigration from "app/application/useCase/StartMigration.js";
+import { StartMigration } from "app/application/useCase/StartMigration.js";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
 import type { MigrationRepository } from "app/domain/interface/MigrationRepository.js";

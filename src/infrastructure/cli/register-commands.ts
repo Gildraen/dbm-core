@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
-import RegisterDiscordCommands from "app/application/useCase/RegisterDiscordCommands.js";
-import { Client, GatewayIntentBits } from "discord.js";
 import fs from "fs";
 import path from "path";
+import { Client, GatewayIntentBits } from "discord.js";
+
+import { RegisterDiscordCommands } from "app/application/useCase/RegisterDiscordCommands.js";
+import { DiscordCommandRepository } from "app/infrastructure/repository/DiscordCommandRepository.js";
 
 class RegisterDiscordCommandsCli {
     private readonly dryRun: boolean;
@@ -41,7 +43,8 @@ class RegisterDiscordCommandsCli {
         }
 
         try {
-            const useCase = new RegisterDiscordCommands(client, this.dryRun);
+            const commandRepository = new DiscordCommandRepository(client);
+            const useCase = new RegisterDiscordCommands(commandRepository, this.dryRun);
             const report = await useCase.execute();
 
             console.log("\nCommand registration report:");

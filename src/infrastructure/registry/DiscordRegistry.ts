@@ -1,15 +1,15 @@
 import type {
     SlashCommand,
-    InteractionHandler
+    InteractionListener
 } from "app/domain/types/DecoratorInterfaces.js";
 
 /**
- * Central registry for Discord application commands and interaction handlers
+ * Central registry for Discord application commands and interaction listeners
  * Used by decorators to automatically register decorated classes
  */
 
 const slashCommands = new Map<string, new () => SlashCommand>();
-const interactionHandlers: (new () => InteractionHandler)[] = [];
+const interactionListeners: (new () => InteractionListener)[] = [];
 
 // Slash Command Registration
 export function registerSlashCommand(name: string, commandClass: new () => SlashCommand): void {
@@ -32,39 +32,39 @@ export function clearSlashCommands(): void {
     slashCommands.clear();
 }
 
-// Interaction Handler Registration
-export function registerInteractionHandler(handlerClass: new () => InteractionHandler): void {
-    if (interactionHandlers.includes(handlerClass)) {
-        console.warn(`⚠️  Interaction handler is already registered. Skipping...`);
+// Interaction Listener Registration
+export function registerInteractionListener(listenerClass: new () => InteractionListener): void {
+    if (interactionListeners.includes(listenerClass)) {
+        console.warn(`⚠️  Interaction listener is already registered. Skipping...`);
         return;
     }
-    interactionHandlers.push(handlerClass);
-    console.log(`✅ Registered interaction handler: ${handlerClass.name}`);
+    interactionListeners.push(listenerClass);
+    console.log(`✅ Registered interaction listener: ${listenerClass.name}`);
 }
 
-export function getAllInteractionHandlers(): (new () => InteractionHandler)[] {
-    return [...interactionHandlers];
+export function getAllInteractionListeners(): (new () => InteractionListener)[] {
+    return [...interactionListeners];
 }
 
-export function clearInteractionHandlers(): void {
-    interactionHandlers.length = 0;
+export function clearInteractionListeners(): void {
+    interactionListeners.length = 0;
 }
 
 // Registry Management
 export function clearDiscordRegistry(): void {
     clearSlashCommands();
-    clearInteractionHandlers();
+    clearInteractionListeners();
     console.log("🧹 Cleared all Discord registrations");
 }
 
 export function getDiscordRegistrationSummary(): {
     slashCommands: number;
-    interactionHandlers: number;
+    interactionListeners: number;
     total: number;
 } {
     return {
         slashCommands: slashCommands.size,
-        interactionHandlers: interactionHandlers.length,
-        total: slashCommands.size + interactionHandlers.length
+        interactionListeners: interactionListeners.length,
+        total: slashCommands.size + interactionListeners.length
     };
 }

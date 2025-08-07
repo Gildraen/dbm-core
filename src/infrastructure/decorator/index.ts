@@ -3,65 +3,65 @@ export { SlashCommand } from "./SlashCommand.js";
 export { UserContextMenu } from "./UserContextMenu.js";
 export { MessageContextMenu } from "./MessageContextMenu.js";
 
-// Handler decorators
-export { InteractionHandler } from "./InteractionHandler.js";
-export { StringSelectHandler } from "./StringSelectHandler.js";
-export { UserSelectHandler } from "./UserSelectHandler.js";
-export { RoleSelectHandler } from "./RoleSelectHandler.js";
-export { ChannelSelectHandler } from "./ChannelSelectHandler.js";
-export { MentionableSelectHandler } from "./MentionableSelectHandler.js";
-export { AutocompleteHandler } from "./AutocompleteHandler.js";
-export { EventHandler } from "./EventHandler.js";
+// Listener decorators
+export { InteractionListener } from "./InteractionListener.js";
+export { StringSelectListener } from "./StringSelectListener.js";
+export { UserSelectListener } from "./UserSelectListener.js";
+export { RoleSelectListener } from "./RoleSelectListener.js";
+export { ChannelSelectListener } from "./ChannelSelectListener.js";
+export { MentionableSelectListener } from "./MentionableSelectListener.js";
+export { AutocompleteListener } from "./AutocompleteListener.js";
+export { EventListener } from "./EventListener.js";
 
 // Registry functions for advanced usage
 export {
-    registerStringSelectHandler,
-    getAllStringSelectHandlers,
-    getStringSelectHandler,
-    clearStringSelectHandlers
-} from "./StringSelectHandler.js";
+    registerStringSelectListener,
+    getAllStringSelectListeners,
+    getStringSelectListener,
+    clearStringSelectListeners
+} from "./StringSelectListener.js";
 
 export {
-    registerUserSelectHandler,
-    getAllUserSelectHandlers,
-    getUserSelectHandler,
-    clearUserSelectHandlers
-} from "./UserSelectHandler.js";
+    registerUserSelectListener,
+    getAllUserSelectListeners,
+    getUserSelectListener,
+    clearUserSelectListeners
+} from "./UserSelectListener.js";
 
 export {
-    registerRoleSelectHandler,
-    getAllRoleSelectHandlers,
-    getRoleSelectHandler,
-    clearRoleSelectHandlers
-} from "./RoleSelectHandler.js";
+    registerRoleSelectListener,
+    getAllRoleSelectListeners,
+    getRoleSelectListener,
+    clearRoleSelectListeners
+} from "./RoleSelectListener.js";
 
 export {
-    registerChannelSelectHandler,
-    getAllChannelSelectHandlers,
-    getChannelSelectHandler,
-    clearChannelSelectHandlers
-} from "./ChannelSelectHandler.js";
+    registerChannelSelectListener,
+    getAllChannelSelectListeners,
+    getChannelSelectListener,
+    clearChannelSelectListeners
+} from "./ChannelSelectListener.js";
 
 export {
-    registerMentionableSelectHandler,
-    getAllMentionableSelectHandlers,
-    getMentionableSelectHandler,
-    clearMentionableSelectHandlers
-} from "./MentionableSelectHandler.js";
+    registerMentionableSelectListener,
+    getAllMentionableSelectListeners,
+    getMentionableSelectListener,
+    clearMentionableSelectListeners
+} from "./MentionableSelectListener.js";
 
 export {
-    registerAutocompleteHandler,
-    getAllAutocompleteHandlers,
-    getAutocompleteHandler,
-    clearAutocompleteHandlers
-} from "./AutocompleteHandler.js";
+    registerAutocompleteListener,
+    getAllAutocompleteListeners,
+    getAutocompleteListener,
+    clearAutocompleteListeners
+} from "./AutocompleteListener.js";
 
 export {
-    registerEventHandler,
-    getAllEventHandlers,
-    getEventHandlers,
-    clearEventHandlers
-} from "./EventHandler.js";
+    registerEventListener,
+    getAllEventListeners,
+    getEventListeners,
+    clearEventListeners
+} from "./EventListener.js";
 
 export {
     registerUserContextMenu,

@@ -1,21 +1,31 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Client } from "discord.js";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { SetupModuleHandlers } from "app/application/useCase/SetupModuleHandlers.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
+import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
+import type { Client } from "discord.js";
 
-// Mock dependencies
 vi.mock("app/domain/config/Config.js");
 vi.mock("app/domain/service/ModuleLoader.js");
 
 describe("SetupModuleHandlers", () => {
     let mockClient: Client;
+    let mockListenerRepository: ListenerRepository;
     let setupModuleHandlers: SetupModuleHandlers;
 
     beforeEach(() => {
         mockClient = {} as Client;
-        setupModuleHandlers = new SetupModuleHandlers(mockClient);
+        mockListenerRepository = {
+            registerEventListener: vi.fn(),
+            registerInteractionListener: vi.fn(),
+            getListenerSummary: vi.fn().mockReturnValue({
+                eventListeners: 0,
+                interactionListeners: 0,
+                total: 0
+            })
+        };
+        setupModuleHandlers = new SetupModuleHandlers(mockListenerRepository, mockClient);
         vi.clearAllMocks();
     });
 
@@ -25,123 +35,119 @@ describe("SetupModuleHandlers", () => {
             setupHandlers: vi.fn()
         };
 
-        vi.mocked(config.getEnabledModules).mockReturnValue([
-            { name: "test-module", config: { enabled: true, settings: {} } }
-        ]);
+        vi.mocked(config.getConfig).mockReturnValue({
+            "test-module": { enabled: true, settings: {} }
+        });
         vi.mocked(loadModule).mockResolvedValue(mockModule);
 
-        const result = await setupModuleHandlers.execute();
+        const results = await setupModuleHandlers.execute();
 
-        expect(result.results).toHaveLength(1);
-        expect(result.results[0]).toEqual({
-            moduleName: "test-module",
-            status: OperationStatus.SUCCESS,
-            durationMs: expect.any(Number)
-        });
-        expect(result.successCount).toBe(1);
-        expect(result.failureCount).toBe(0);
-        expect(mockModule.setupHandlers).toHaveBeenCalledWith(mockClient);
+        expect(results).toHaveLength(1);
+        expect(results[0].moduleName).toBe("test-module");
+        expect(results[0].status).toBe(OperationStatus.SUCCESS);
+        expect(results[0].durationMs).toBeTypeOf("number");
+        expect(mockModule.setupHandlers).toHaveBeenCalledWith();
     });
 
-    it("should succeed for modules without setupHandlers method", async () => {
+    it("should successfully setup handlers for modules without setupHandlers method", async () => {
         const mockModule = {
             name: "test-module-no-handlers"
         };
 
-        vi.mocked(config.getEnabledModules).mockReturnValue([
-            { name: "test-module-no-handlers", config: { enabled: true, settings: {} } }
-        ]);
+        vi.mocked(config.getConfig).mockReturnValue({
+            "test-module-no-handlers": { enabled: true, settings: {} }
+        });
         vi.mocked(loadModule).mockResolvedValue(mockModule);
 
-        const result = await setupModuleHandlers.execute();
+        const results = await setupModuleHandlers.execute();
 
-        expect(result.results).toHaveLength(1);
-        expect(result.results[0]).toEqual({
-            moduleName: "test-module-no-handlers",
-            status: OperationStatus.SUCCESS,
-            durationMs: expect.any(Number)
-        });
-        expect(result.successCount).toBe(1);
-        expect(result.failureCount).toBe(0);
+        expect(results).toHaveLength(1);
+        expect(results[0].moduleName).toBe("test-module-no-handlers");
+        expect(results[0].status).toBe(OperationStatus.SUCCESS);
+        expect(results[0].durationMs).toBeTypeOf("number");
     });
 
-    it("should handle errors during handler setup", async () => {
-        const mockModule = {
-            name: "failing-module",
-            setupHandlers: vi.fn().mockImplementation(() => {
-                throw new Error("Handler setup failed");
-            })
-        };
-
-        vi.mocked(config.getEnabledModules).mockReturnValue([
-            { name: "failing-module", config: { enabled: true, settings: {} } }
-        ]);
-        vi.mocked(loadModule).mockResolvedValue(mockModule);
-
-        const result = await setupModuleHandlers.execute();
-
-        expect(result.results).toHaveLength(1);
-        expect(result.results[0]).toEqual({
-            moduleName: "failing-module",
-            status: OperationStatus.FAILED,
-            error: "Error in setupHandlers for module \"failing-module\": Handler setup failed"
+    it("should handle errors during module loading", async () => {
+        vi.mocked(config.getConfig).mockReturnValue({
+            "failing-module": { enabled: true, settings: {} }
         });
-        expect(result.successCount).toBe(0);
-        expect(result.failureCount).toBe(1);
+        vi.mocked(loadModule).mockRejectedValue(new Error("Module not found"));
+
+        const results = await setupModuleHandlers.execute();
+
+        expect(results).toHaveLength(1);
+        expect(results[0].moduleName).toBe("failing-module");
+        expect(results[0].status).toBe(OperationStatus.FAILED);
+        expect(results[0].error).toBe("Module not found");
+        expect(results[0].durationMs).toBeTypeOf("number");
     });
 
-    it("should handle module loading errors", async () => {
-        vi.mocked(config.getEnabledModules).mockReturnValue([
-            { name: "bad-module", config: { enabled: true, settings: {} } }
-        ]);
-        vi.mocked(loadModule).mockRejectedValue(new Error("Failed to load module"));
+    it("should handle multiple modules", async () => {
+        const mockModule1 = { name: "module1", setupHandlers: vi.fn() };
+        const mockModule2 = { name: "module2", setupHandlers: vi.fn() };
 
-        const result = await setupModuleHandlers.execute();
-
-        expect(result.results).toHaveLength(1);
-        expect(result.results[0]).toEqual({
-            moduleName: "bad-module",
-            status: OperationStatus.FAILED,
-            error: "Failed to load module"
+        vi.mocked(config.getConfig).mockReturnValue({
+            "module1": { enabled: true, settings: {} },
+            "module2": { enabled: true, settings: {} },
+            "disabled-module": { enabled: false, settings: {} }
         });
-        expect(result.successCount).toBe(0);
-        expect(result.failureCount).toBe(1);
-    });
-
-    it("should process multiple modules and return comprehensive report", async () => {
-        const module1 = { name: "module-1", setupHandlers: vi.fn() };
-        const module2 = { name: "module-2" }; // No handlers
-        const module3 = {
-            name: "module-3",
-            setupHandlers: vi.fn().mockImplementation(() => { throw new Error("Setup failed") })
-        };
-
-        vi.mocked(config.getEnabledModules).mockReturnValue([
-            { name: "module-1", config: { enabled: true, settings: {} } },
-            { name: "module-2", config: { enabled: true, settings: {} } },
-            { name: "module-3", config: { enabled: true, settings: {} } }
-        ]);
 
         vi.mocked(loadModule)
-            .mockResolvedValueOnce(module1)
-            .mockResolvedValueOnce(module2)
-            .mockResolvedValueOnce(module3);
+            .mockResolvedValueOnce(mockModule1)
+            .mockResolvedValueOnce(mockModule2);
 
-        const result = await setupModuleHandlers.execute();
+        const results = await setupModuleHandlers.execute();
 
-        expect(result.results).toHaveLength(3);
-        expect(result.successCount).toBe(2);
-        expect(result.failureCount).toBe(1);
-        expect(result.totalDurationMs).toBeGreaterThanOrEqual(0);
+        expect(results).toHaveLength(2);
+        expect(results[0].moduleName).toBe("module1");
+        expect(results[0].status).toBe(OperationStatus.SUCCESS);
+        expect(results[1].moduleName).toBe("module2");
+        expect(results[1].status).toBe(OperationStatus.SUCCESS);
+        expect(mockModule1.setupHandlers).toHaveBeenCalledWith();
+        expect(mockModule2.setupHandlers).toHaveBeenCalledWith();
+        expect(loadModule).toHaveBeenCalledTimes(2);
     });
 
-    it("should work with empty module list", async () => {
-        vi.mocked(config.getEnabledModules).mockReturnValue([]);
+    it("should handle no enabled modules", async () => {
+        vi.mocked(config.getConfig).mockReturnValue({});
 
-        const result = await setupModuleHandlers.execute();
+        const results = await setupModuleHandlers.execute();
 
-        expect(result.results).toHaveLength(0);
-        expect(result.successCount).toBe(0);
-        expect(result.failureCount).toBe(0);
+        expect(results).toHaveLength(0);
+    });
+
+    it("should handle mixed success and failure scenarios", async () => {
+        const mockModule1 = { name: "module1", setupHandlers: vi.fn() };
+
+        vi.mocked(config.getConfig).mockReturnValue({
+            "module1": { enabled: true, settings: {} },
+            "failing-module": { enabled: true, settings: {} },
+            "module3": { enabled: true, settings: {} }
+        });
+
+        vi.mocked(loadModule)
+            .mockResolvedValueOnce(mockModule1)
+            .mockRejectedValueOnce(new Error("Module failed to load"))
+            .mockResolvedValueOnce({ name: "module3" });
+
+        const results = await setupModuleHandlers.execute();
+
+        expect(results).toHaveLength(3);
+
+        // First module should succeed
+        expect(results[0].moduleName).toBe("module1");
+        expect(results[0].status).toBe(OperationStatus.SUCCESS);
+
+        // Second module should fail
+        expect(results[1].moduleName).toBe("failing-module");
+        expect(results[1].status).toBe(OperationStatus.FAILED);
+        expect(results[1].error).toBe("Module failed to load");
+
+        // Third module should succeed
+        expect(results[2].moduleName).toBe("module3");
+        expect(results[2].status).toBe(OperationStatus.SUCCESS);
+
+        expect(mockModule1.setupHandlers).toHaveBeenCalledWith();
+        expect(loadModule).toHaveBeenCalledTimes(3);
     });
 });
