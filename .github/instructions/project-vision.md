@@ -44,7 +44,6 @@ description: "Project vision and architectural principles learned through intera
 - **During `setupHandlers()`**: Modules register all their Discord event listeners
 - **Bot responsibility**: Only handle general Discord events (member joins, reactions, etc.)
 - **No routing needed**: Discord routes slash commands to module handlers automatically
-- **Context requirements**: RegisterContext must include Discord client for command and handler registration
 
 ### Main Bot Minimalism
 
@@ -64,6 +63,11 @@ description: "Project vision and architectural principles learned through intera
 - **Documentation**: Consistency across all markdown files is crucial
 - **Testing**: All tests should pass, maintain high coverage
 - **Commit Style**: Conventional commits with clear scopes
+- **Release Strategy**: 🤝 **MERGE COMMITS for community recognition** 🤝
+  - Preserves individual contributor attribution
+  - Maintains educational development history
+  - Enables better debugging through atomic commits
+  - Encourages community participation through proper recognition
 
 ### Technical Decisions
 
