@@ -34,7 +34,7 @@ export class DiscordListenerRepository implements ListenerRepository {
     ): void {
         const instance = new handlerClass();
         const handler = async (...args: ClientEvents[K]) => instance.handle(this.client, ...args);
-        
+
         if (once) {
             this.client.once(eventName, handler);
         } else {
