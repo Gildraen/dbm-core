@@ -79,7 +79,7 @@ Examples:
             console.log("\n✅ Discord command registration completed successfully!");
         } finally {
             // Clean up Discord client connection
-            if (client && client.isReady()) {
+            if (client.isReady()) {
                 client.destroy();
             }
         }
