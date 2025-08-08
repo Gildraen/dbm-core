@@ -1,5 +1,5 @@
 import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
-import type { DiscordInteraction, InteractionHandler } from "app/domain/interface/InteractionHandler.js";
+import type { PlatformInteraction, InteractionHandler } from "app/domain/interface/InteractionHandler.js";
 import { getAllSlashCommands } from "app/infrastructure/registry/DiscordRegistry.js";
 import { getAllUserContextMenus } from "app/infrastructure/decorator/UserContextMenu.js";
 import { getAllMessageContextMenus } from "app/infrastructure/decorator/MessageContextMenu.js";
@@ -13,7 +13,7 @@ import { getAllEventListeners } from "app/infrastructure/decorator/EventListener
 
 /**
  * Domain service for listener setup business logic
- * Contains the core logic for registering discovered listeners with Discord
+ * Contains the core logic for registering discovered listeners with the platform
  */
 export class ListenerSetupService {
     private readonly listenerRepository: ListenerRepository;
@@ -25,7 +25,7 @@ export class ListenerSetupService {
     }
 
     /**
-     * Set up all discovered listeners with the Discord client
+     * Set up all discovered listeners with the platform client
      * Returns the total number of listeners registered
      */
     setupDiscoveredListeners(): number {
@@ -139,14 +139,14 @@ export class ListenerSetupService {
 
     private setupInteractionRouter(): number {
         this.listenerRepository.registerInteractionListener(
-            (interaction: DiscordInteraction) => this.handleIncomingInteraction(interaction)
+            (interaction: PlatformInteraction) => this.handleIncomingInteraction(interaction)
         );
 
         // Return total count using strategy pattern
         return this.calculateInteractionListenerCount();
     }
 
-    private async handleIncomingInteraction(interaction: DiscordInteraction): Promise<unknown> {
+    private async handleIncomingInteraction(interaction: PlatformInteraction): Promise<unknown> {
         const startTime = performance.now();
 
         try {
@@ -176,12 +176,12 @@ export class ListenerSetupService {
         }
     }
 
-    private findMatchingHandler(interaction: DiscordInteraction): InteractionHandler | undefined {
+    private findMatchingHandler(interaction: PlatformInteraction): InteractionHandler | undefined {
         // Use find for early termination - more efficient than loop
         return this.interactionHandlers.find(handler => handler.matches(interaction));
     }
 
-    private async executeHandler(interaction: DiscordInteraction, handler: InteractionHandler): Promise<boolean> {
+    private async executeHandler(interaction: PlatformInteraction, handler: InteractionHandler): Promise<boolean> {
         try {
             const key = handler.getKey(interaction as any);
             const registry = handler.getRegistry();
@@ -218,7 +218,7 @@ export class ListenerSetupService {
         }, 0);
     }
 
-    private getInteractionTypeName(interaction: DiscordInteraction): string {
+    private getInteractionTypeName(interaction: PlatformInteraction): string {
         if (interaction.isChatInputCommand()) return 'SlashCommand';
         if (interaction.isUserContextMenuCommand()) return 'UserContextMenu';
         if (interaction.isMessageContextMenuCommand()) return 'MessageContextMenu';
@@ -233,7 +233,7 @@ export class ListenerSetupService {
         return `Unknown(${interaction.type})`;
     }
 
-    private getInteractionIdentifier(interaction: DiscordInteraction): string {
+    private getInteractionIdentifier(interaction: PlatformInteraction): string {
         if (interaction.isCommand()) return interaction.commandName || 'unknown';
         if (interaction.isMessageComponent()) return interaction.customId || 'unknown';
         if (interaction.isAutocomplete()) return interaction.commandName || 'unknown';
@@ -263,7 +263,7 @@ export class ListenerSetupService {
         const interactionCount = this.calculateInteractionListenerCount();
         const eventHandlers = getAllEventListeners().size;
 
-        console.log(`✅ Successfully set up ${totalListeners} discovered listeners with Discord client:`);
+        console.log(`✅ Successfully set up ${totalListeners} discovered listeners with platform client:`);
 
         // Log interaction handlers by category
         this.interactionHandlers.forEach(handler => {

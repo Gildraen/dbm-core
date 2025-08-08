@@ -1,6 +1,6 @@
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
-import { ListenerSetupService } from "app/infrastructure/service/ListenerSetupService.js";
+import { ListenerSetupService } from "app/domain/service/ListenerSetupService.js";
 import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
 
 export class RegisterListeners {
