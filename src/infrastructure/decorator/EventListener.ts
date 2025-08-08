@@ -1,13 +1,14 @@
 import type { EventListener, EventMetadata } from "app/domain/types/DecoratorInterfaces.js";
+import type { TypedEventListener, PlatformEvents } from "app/domain/types/PlatformEvents.js";
 import type { ClientEvents } from "discord.js";
 
-// Event Listener Registry
-const eventListeners = new Map<keyof ClientEvents, Array<{ handlerClass: new () => EventListener<any>; once: boolean }>>();
+// Event Listener Registry - Use string type for keys to remove dependency on ClientEvents
+const eventListeners = new Map<string, Array<{ handlerClass: new () => EventListener; once: boolean }>>();
 
 // Registry functions
-export function registerEventListener<K extends keyof ClientEvents>(
-    eventName: K,
-    listenerClass: new () => EventListener<K>,
+export function registerEventListener(
+    eventName: string,
+    listenerClass: new () => EventListener,
     once: boolean = false
 ): void {
     if (!eventListeners.has(eventName)) {
@@ -30,11 +31,11 @@ export function registerEventListener<K extends keyof ClientEvents>(
     console.log(`✅ Registered ${once ? 'once' : 'on'} event listener for: ${eventName}`);
 }
 
-export function getAllEventListeners(): Map<keyof ClientEvents, Array<{ handlerClass: new () => EventListener<any>; once: boolean }>> {
+export function getAllEventListeners(): Map<string, Array<{ handlerClass: new () => EventListener; once: boolean }>> {
     return new Map(eventListeners);
 }
 
-export function getEventListeners(eventName: keyof ClientEvents): Array<{ handlerClass: new () => EventListener<any>; once: boolean }> {
+export function getEventListeners(eventName: string): Array<{ handlerClass: new () => EventListener; once: boolean }> {
     return eventListeners.get(eventName) || [];
 }
 
@@ -68,8 +69,8 @@ export function clearEventListeners(): void {
  * }
  * ```
  */
-export function EventListener<K extends keyof ClientEvents>(eventName: K, once: boolean = false) {
-    return function <T extends new () => EventListener<K>>(target: T): T {
+export function EventListener(eventName: string, once: boolean = false) {
+    return function <T extends new () => EventListener>(target: T): T {
         // Store metadata on the class
         (target as any).eventName = eventName;
         (target as any).eventOnce = once;

@@ -1,40 +1,40 @@
-import type { Client, ClientEvents, Interaction } from "discord.js";
+import type { PlatformInteraction } from "./InteractionHandler.js";
 
 /**
- * Repository interface for managing Discord event listeners
- * Abstracts Discord client interactions for Clean Architecture compliance
+ * Repository interface for managing event listeners
+ * Clean Architecture compliant without direct platform dependencies
  */
 export interface ListenerRepository {
     /**
-     * Register an event listener with the Discord client
-     * @param eventName The Discord event name
+     * Register an event listener
+     * @param eventName The event name
      * @param handler The event handler function
      * @param once Whether this is a one-time listener
      */
-    registerEventListener<K extends keyof ClientEvents>(
-        eventName: K,
-        handler: (...args: ClientEvents[K]) => Promise<unknown>,
+    registerEventListener(
+        eventName: string,
+        handler: (...args: unknown[]) => Promise<unknown>,
         once?: boolean
     ): void;
 
     /**
-     * Register an event handler class that needs the Discord client
-     * @param eventName The Discord event name
+     * Register an event handler class
+     * @param eventName The event name
      * @param handlerClass The handler class constructor
      * @param once Whether this is a one-time listener
      */
-    registerEventHandlerClass<K extends keyof ClientEvents>(
-        eventName: K,
-        handlerClass: new () => { handle: (client: Client, ...args: ClientEvents[K]) => Promise<unknown> },
+    registerEventHandlerClass(
+        eventName: string,
+        handlerClass: new () => { handle: (...args: unknown[]) => Promise<unknown> },
         once?: boolean
     ): void;
 
     /**
-     * Register the main interaction router with the Discord client
+     * Register the main interaction router
      * @param handler The interaction handler function
      */
     registerInteractionListener(
-        handler: (interaction: Interaction) => Promise<unknown>
+        handler: (interaction: PlatformInteraction) => Promise<unknown>
     ): void;
 
     /**

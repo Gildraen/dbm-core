@@ -1,8 +1,8 @@
 /**
- * Domain abstraction for Discord interactions
- * Provides Clean Architecture compliance by abstracting Discord.js specifics
+ * Domain abstraction for platform interactions
+ * Provides Clean Architecture compliance by abstracting platform specifics
  */
-export interface DiscordInteraction {
+export interface PlatformInteraction {
     // Common interaction properties
     readonly type: number;
     readonly id: string;
@@ -30,7 +30,7 @@ export interface DiscordInteraction {
  */
 export interface InteractionHandler {
     name: string;
-    matches: (interaction: DiscordInteraction) => boolean;
+    matches: (interaction: PlatformInteraction) => boolean;
     getRegistry: () => Map<string, new () => any>;
     getKey: (interaction: any) => string;
     method: 'execute' | 'handle';

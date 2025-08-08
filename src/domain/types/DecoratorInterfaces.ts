@@ -11,9 +11,7 @@ import type {
     MentionableSelectMenuInteraction,
     AutocompleteInteraction,
     ButtonInteraction,
-    ModalSubmitInteraction,
-    Client,
-    ClientEvents
+    ModalSubmitInteraction
 } from "discord.js";
 
 // Slash Command Interface
@@ -71,17 +69,17 @@ export interface AutocompleteListener {
 
 // General Interaction Event Listener
 export interface InteractionListener {
-    setup(client: Client): void;
+    setup(client: any): void;
 }
 
-// Discord Event Listener
-export interface EventListener<K extends keyof ClientEvents = keyof ClientEvents> {
-    handle(client: Client, ...args: ClientEvents[K]): Promise<unknown>;
+// Event Listener - Generic to avoid platform-specific dependency
+export interface EventListener {
+    handle(...args: unknown[]): Promise<unknown>;
 }
 
 // Event metadata for decorators
 export interface EventMetadata {
-    eventName: keyof ClientEvents;
+    eventName: string;
     once?: boolean;
 }
 
