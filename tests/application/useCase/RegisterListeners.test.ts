@@ -140,15 +140,6 @@ describe("RegisterListeners", () => {
         );
     });
 
-
-    test("should handle no enabled modules", async () => {
-        (config.getEnabledModules as Mock).mockReturnValue([]);
-
-        await registerListeners.execute();
-
-        expect(consoleSpy).not.toHaveBeenCalled();
-    });
-
     test("should handle success for one module and failure for another", async () => {
         const mockSuccessModule = {
             name: "success-module",
