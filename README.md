@@ -1,6 +1,4 @@
-# Discord Bot Core (@gildraen/dbm-core)
-
-A TypeScript library for orchestrating Discord bot modules using Clean Architecture principles. Build modular Discord bots where each feature is an independent npm package.
+# Discord Bot Core (@gildraen/dbm-core)<void>
 
 ## 🎯 Features
 
@@ -24,17 +22,21 @@ Create a Discord bot with modular architecture:
 ```typescript
 // bot/src/BotApplication.ts
 import { Client, GatewayIntentBits } from "discord.js";
-import { SetupModuleHandlers } from "@gildraen/dbm-core";
+import {
+  RegisterListeners,
+  DiscordListenerRepository,
+} from "@gildraen/dbm-core";
 
 export class BotApplication {
   private readonly client: Client;
-  private readonly setupHandlers: SetupModuleHandlers;
+  private readonly registerListeners: RegisterListeners;
 
   constructor() {
     this.client = new Client({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
     });
-    this.setupHandlers = new SetupModuleHandlers(this.client);
+    const listenerRepository = new DiscordListenerRepository(this.client);
+    this.registerListeners = new RegisterListeners(listenerRepository);
   }
 
   async start(): Promise<void> {
@@ -42,7 +44,7 @@ export class BotApplication {
       console.log(`🤖 ${this.client.user?.tag} is ready!`);
 
       // Set up all module handlers
-      const report = await this.setupHandlers.execute();
+      const report = await this.registerListeners.execute();
       console.log(`✅ ${report.successCount} modules loaded`);
     });
 
@@ -63,7 +65,7 @@ yarn start                    # Start the bot
 
 Create independent module packages that implement the `ModuleInterface`:
 
-```typescript
+````typescript
 // @myorg/economy-module/src/index.ts
 import type { ModuleInterface } from "@gildraen/dbm-core";
 import { Client } from "discord.js";
@@ -84,24 +86,83 @@ export class EconomyModule implements ModuleInterface {
   }
 
   // Optional: Register Discord slash commands
-  async register({ dryRun }) {
-    if (!dryRun) {
-      // Register /balance, /daily commands with Discord API
-    }
+  async register({ commandTool }) {
+    // ✅ NEW: Use CommandRegistrationTool for safe command declaration
+    commandTool.addSlashCommand(
+      "balance",
+      "Check your economy balance",
+      new SlashCommandBuilder()
+        .setName("balance")
+        .setDescription("Check your economy balance")
+    );
+
+    commandTool.addSlashCommand(
+      "daily",
+      "Claim your daily coins",
+      new SlashCommandBuilder()
+        .setName("daily")
+        .setDescription("Claim your daily coins")
+    );
+
+    return { commands: ["balance", "daily"] };
   }
 
-  // Optional: Set up Discord event handlers
-  setupHandlers(client: Client) {
-    client.on("interactionCreate", async (interaction) => {
-      if (interaction.commandName === "balance") {
-        // Handle balance command
-      }
-    });
+## Handler Client Access
+
+### Command Handlers
+Access the Discord client via `interaction.client`:
+
+```typescript
+@SlashCommand
+export class BalanceCommand implements SlashCommand {
+  async execute(interaction: ChatInputCommandInteraction): Promise<void> {
+    const client = interaction.client;
+    const botUser = client.user;
+
+    await interaction.reply(`Balance checked by ${botUser?.tag}`);
+  }
+}
+````
+
+### Event Listeners
+
+Get the Discord client as the first parameter, with properly typed event arguments:
+
+```typescript
+@EventListener("ready")
+export class ReadyHandler implements EventListener<"ready"> {
+  async handle(client: Client): Promise<void> {
+    console.log(`Bot ${client.user?.tag} is ready!`);
   }
 }
 
-export const economyModule = new EconomyModule();
+@EventListener("messageCreate")
+export class MessageHandler implements EventListener<"messageCreate"> {
+  async handle(client: Client, message: Message): Promise<void> {
+    // Both client and message are properly typed
+    if (message.content === "!ping") {
+      await message.reply("Pong!");
+    }
+  }
+}
+
+@EventListener("guildMemberAdd")
+export class WelcomeHandler implements EventListener<"guildMemberAdd"> {
+  async handle(client: Client, member: GuildMember): Promise<void> {
+    // member is properly typed as GuildMember
+    const channel = member.guild.systemChannel;
+    if (channel) {
+      await channel.send(`Welcome ${member.user.tag} to ${member.guild.name}!`);
+    }
+  }
+}
 ```
+
+}
+
+export const economyModule = new EconomyModule();
+
+````
 
 **Configuration** (`.dbmrc.json`):
 
@@ -112,7 +173,7 @@ export const economyModule = new EconomyModule();
     "settings": { "startingBalance": 1000 }
   }
 }
-```
+````
 
 ## 📚 API Reference
 
@@ -122,8 +183,8 @@ export const economyModule = new EconomyModule();
 interface ModuleInterface {
   name: string;
   migrate?(context: { prisma: PrismaClient; dryRun: boolean }): Promise<void>;
-  register?(context: { dryRun: boolean }): Promise<void>;
-  setupHandlers?(client: Client): void;
+  discoverCommands?(): Promise<void>;
+  discoverListeners?(): Promise<void>;
 }
 
 type OperationReport = {
@@ -139,13 +200,22 @@ type OperationReport = {
 ```typescript
 import {
   StartMigration,
-  RegisterDiscordCommands,
-  SetupModuleHandlers,
+  RegisterCommands,
+  RegisterListeners,
 } from "@gildraen/dbm-core";
+import { Client, GatewayIntentBits } from "discord.js";
+
+// Create Discord client
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds],
+});
 
 // Programmatic usage
 const migrationService = new StartMigration(repository);
-const report = await migrationService.execute();
+const migrationReport = await migrationService.execute();
+
+const commandService = new RegisterCommands(client);
+const commandReport = await commandService.execute();
 ```
 
 ## 🧪 Development
@@ -158,7 +228,40 @@ yarn build
 yarn test
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines.
+## 🤝 Contributing
+
+We welcome community contributions! This project uses **merge commits** to preserve individual contributor recognition and maintain educational development history.
+
+### Quick Contribution Guide
+
+1. **Fork** and clone the repository
+2. **Create a feature branch**: `git checkout -b feat/amazing-feature`
+3. **Make atomic commits** with conventional commit messages
+4. **Test thoroughly**: `yarn test && yarn lint:check && yarn build`
+5. **Submit a pull request** using the provided template
+
+### Why We Use Merge Commits
+
+- 🏆 **Individual recognition**: Every contributor gets proper attribution
+- 📚 **Learning opportunity**: Community can study development progression
+- 🐛 **Better debugging**: Atomic commits help identify when issues were introduced
+- 📊 **Contribution tracking**: Maintains accurate GitHub contribution graphs
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines, coding standards, and architectural principles.
+
+### Areas We Need Help With
+
+- 🚀 **CLI enhancements** and additional command options
+- 📖 **Documentation improvements** and more examples
+- 🧪 **Test coverage expansion** and edge case testing
+- ⚡ **Performance optimizations** for large module ecosystems
+- 🛠️ **Developer tooling** and debugging capabilities
+
+## 📞 Community & Support
+
+- **GitHub Issues**: Bug reports and feature requests
+- **GitHub Discussions**: Questions, ideas, and community help
+- **Contributing**: See our detailed [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 

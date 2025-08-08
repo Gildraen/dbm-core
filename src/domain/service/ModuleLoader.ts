@@ -27,8 +27,6 @@ function isValidModule(module: unknown): module is ModuleInterface {
     return (
         typeof module === "object" &&
         module !== null &&
-        typeof (module as ModuleInterface).name === "string" &&
-        typeof (module as ModuleInterface).migrate === "function" &&
-        typeof (module as ModuleInterface).register === "function"
+        typeof (module as ModuleInterface).name === "string"
     );
 }

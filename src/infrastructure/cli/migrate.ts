@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { PrismaClient } from "@prisma/client";
-import StartMigration from "app/application/useCase/StartMigration.js";
-import { PrismaMigrationRepository } from "app/infrastructure/repository/PrismaMigrationRepository.js";
+import { StartMigration } from "app/application/useCase/StartMigration.js";
+import { PrismaMigrationRepository } from "app/infrastructure/repository/prisma/PrismaMigrationRepository.js";
 import fs from "fs";
 import path from "path";
 
@@ -24,7 +24,7 @@ class StartMigrationCli {
         const prisma = new PrismaClient();
         const repository = new PrismaMigrationRepository(prisma);
         const useCase = new StartMigration(repository, this.dryRun);
-        
+
         const report = await useCase.execute();
 
         console.log("\nMigration report:");

@@ -10,8 +10,9 @@ description: "Testing guidelines and best practices"
 Follow the testing pyramid: Many unit tests, some integration tests, few E2E tests.
 
 Core principles:
+
 - **Fast**: Tests should run quickly
-- **Independent**: Tests don't depend on each other  
+- **Independent**: Tests don't depend on each other
 - **Repeatable**: Same results every time
 - **Self-Validating**: Clear pass/fail results
 
@@ -37,3 +38,12 @@ Core principles:
 - Configure Node.js environment for backend testing
 - Use setup files for common test configuration
 - Leverage Vitest's built-in mocking capabilities
+
+## Test Execution
+
+🚨 **ALWAYS use `yarn` for test commands**:
+
+- ✅ `yarn test` - Run all tests
+- ✅ `yarn test:watch` - Run tests in watch mode
+- ✅ `yarn build && yarn test` - Build and test
+- ❌ Never use `npm test`, `npm run test`, etc.

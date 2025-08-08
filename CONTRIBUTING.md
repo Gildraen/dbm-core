@@ -213,13 +213,34 @@ test(usecase): add unit tests for StartMigration use case
 
 ## 🔍 Pull Request Guidelines
 
+### Release Strategy
+
+We use **merge commits** (not squash) to preserve community contributions and development history.
+
+#### Why Merge Commits?
+- 🏆 **Proper attribution**: Every contributor gets credit for their individual commits
+- 📚 **Educational value**: Community can learn from the development process
+- 🐛 **Better debugging**: Individual commits help identify when issues were introduced
+- 🤝 **Community recognition**: All contributions remain visible in git history
+- 📊 **Contribution graphs**: Contributors get proper credit in GitHub metrics
+
+#### Commit Quality Requirements
+- **Atomic commits**: Each commit should represent one logical change
+- **Clear messages**: Use conventional commit format consistently
+- **Clean history**: Squash only trivial commits locally (typo fixes, review feedback)
+- **Meaningful progression**: Commits should tell the story of your development
+
 ### Before Submitting
 
+- [ ] Each commit has a clear, conventional commit message
+- [ ] Commits are atomic (one logical change per commit)
+- [ ] No "fix typo" or "address review" commits (squash these locally)
 - [ ] Code follows project conventions
 - [ ] Tests are added for new features
-- [ ] All tests pass locally
+- [ ] All tests pass locally (`yarn test`)
+- [ ] Linting passes (`yarn lint:check`)
+- [ ] Project builds successfully (`yarn build`)
 - [ ] Documentation is updated
-- [ ] Commit messages follow conventional format
 - [ ] No merge conflicts with main branch
 
 ### PR Description Template
@@ -227,7 +248,7 @@ test(usecase): add unit tests for StartMigration use case
 ```markdown
 ## Description
 
-Brief description of the changes.
+Brief description of the changes and motivation.
 
 ## Type of Change
 
@@ -235,16 +256,30 @@ Brief description of the changes.
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
+- [ ] Refactoring (no functional changes)
 
 ## Testing
 
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
+- [ ] All tests pass (`yarn test`)
 - [ ] Manual testing performed
 
-## Screenshots (if applicable)
+## Quality Checklist
 
-Add screenshots to help explain your changes.
+- [ ] Conventional commit messages used
+- [ ] Code follows project architecture (Clean Architecture)
+- [ ] TypeScript strict mode compliance
+- [ ] Documentation updated (if applicable)
+- [ ] Examples updated (if applicable)
+
+## Breaking Changes (if applicable)
+
+Describe any breaking changes and migration steps needed.
+
+## Screenshots/Examples (if applicable)
+
+Add screenshots, code examples, or output to help explain your changes.
 
 ## Related Issues
 

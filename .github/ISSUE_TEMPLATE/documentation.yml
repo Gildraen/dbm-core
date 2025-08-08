@@ -1,0 +1,55 @@
+name: 📖 Documentation Issue
+description: Report missing, unclear, or incorrect documentation
+title: "docs: "
+labels: ["documentation", "good first issue"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve our documentation! Let us know what's missing, unclear, or incorrect.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation needs attention?
+      options:
+        - "README.md"
+        - "API Documentation"
+        - "Contributing Guidelines"
+        - "Examples"
+        - "Code Comments"
+        - "Architecture Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: Issue Description
+      description: What's wrong with the current documentation?
+      placeholder: The documentation for X is unclear because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-docs
+    attributes:
+      label: Current Documentation
+      description: Quote the current documentation that needs improvement
+      render: markdown
+
+  - type: textarea
+    id: suggested-improvement
+    attributes:
+      label: Suggested Improvement
+      description: How would you improve this documentation?
+      placeholder: I suggest we change it to...
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful

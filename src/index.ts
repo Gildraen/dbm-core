@@ -1,11 +1,39 @@
 import { type ModuleInterface } from "app/domain/interface/ModuleInterface.js";
-import StartMigration from "app/application/useCase/StartMigration.js";
-import RegisterDiscordCommands from "app/application/useCase/RegisterDiscordCommands.js";
-import { SetupModuleHandlers } from "app/application/useCase/SetupModuleHandlers.js";
+import { type MigrationContext } from "app/domain/types/MigrationContext.js";
 
-export { 
+// Decorator imports
+import {
+    SlashCommand,
+    UserContextMenu,
+    MessageContextMenu,
+    InteractionListener,
+    StringSelectListener,
+    UserSelectListener,
+    RoleSelectListener,
+    ChannelSelectListener,
+    MentionableSelectListener,
+    AutocompleteListener,
+    EventListener
+} from "app/infrastructure/decorator/index.js";
+
+// Public API for external module developers
+export {
+    // Core interface for module development
     type ModuleInterface,
-    StartMigration,
-    RegisterDiscordCommands,
-    SetupModuleHandlers
+
+    // Types needed for module development
+    type MigrationContext,
+
+    // Decorators for module developers
+    SlashCommand,
+    UserContextMenu,
+    MessageContextMenu,
+    InteractionListener,
+    StringSelectListener,
+    UserSelectListener,
+    RoleSelectListener,
+    ChannelSelectListener,
+    MentionableSelectListener,
+    AutocompleteListener,
+    EventListener
 };
