@@ -1,15 +1,4 @@
-# Discord Bot Core (@gildraen/dbm-core) const listenerRepository = new DiscordListenerRepository(this.client);
-
-    this.registerListeners = new RegisterListeners(listenerRepository);
-
-}
-
-async start(): Promise<void> {
-this.client.on("ready", async () => {
-console.log(`🤖 ${this.client.user?.tag} is ready!`);
-
-      // Setup all module listeners
-      const report = await this.registerListeners.execute();ript library for orchestrating Discord bot modules using Clean Architecture principles. Build modular Discord bots where each feature is an independent npm package.
+# Discord Bot Core (@gildraen/dbm-core)<void>
 
 ## 🎯 Features
 

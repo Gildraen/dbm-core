@@ -5,7 +5,7 @@ import path from "path";
 import { Client, GatewayIntentBits } from "discord.js";
 
 import { RegisterCommands } from "app/application/useCase/RegisterCommands.js";
-import { DiscordCommandRepository } from "app/infrastructure/repository/DiscordCommandRepository.js";
+import { DiscordCommandRepository } from "app/infrastructure/repository/discord/DiscordCommandRepository.js";
 
 class RegisterDiscordCommandsCli {
     private readonly outputPath?: string;
@@ -13,7 +13,6 @@ class RegisterDiscordCommandsCli {
     constructor() {
         const args = process.argv.slice(2);
 
-        // Check for output flag
         const outputIndex = args.findIndex(arg => arg === "--output" || arg === "-o");
         if (outputIndex !== -1 && args[outputIndex + 1]) {
             this.outputPath = path.resolve(process.cwd(), args[outputIndex + 1]);

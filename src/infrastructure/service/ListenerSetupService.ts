@@ -157,7 +157,7 @@ export class ListenerSetupService {
         return this.calculateInteractionListenerCount();
     }
 
-    private async handleIncomingInteraction(interaction: Interaction): Promise<undefined> {
+    private async handleIncomingInteraction(interaction: Interaction): Promise<unknown> {
         const startTime = performance.now();
 
         try {

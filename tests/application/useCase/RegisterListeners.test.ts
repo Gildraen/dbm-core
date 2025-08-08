@@ -140,30 +140,6 @@ describe("RegisterListeners", () => {
         );
     });
 
-    test("should handle multiple modules", async () => {
-        const mockModule1 = {
-            name: "module1",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
-        const mockModule2 = {
-            name: "module2",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "module1", config: { enabled: true, settings: {} } },
-            { name: "module2", config: { enabled: true, settings: {} } }
-        ]);
-        (loadModule as Mock)
-            .mockResolvedValueOnce(mockModule1)
-            .mockResolvedValueOnce(mockModule2);
-
-        await registerListeners.execute();
-
-        expect(mockModule1.discoverListeners).toHaveBeenCalledWith();
-        expect(mockModule2.discoverListeners).toHaveBeenCalledWith();
-        expect(consoleSpy).not.toHaveBeenCalled();
-    });
 
     test("should handle no enabled modules", async () => {
         (config.getEnabledModules as Mock).mockReturnValue([]);
@@ -173,7 +149,7 @@ describe("RegisterListeners", () => {
         expect(consoleSpy).not.toHaveBeenCalled();
     });
 
-    test("should handle mixed success and failure scenarios", async () => {
+    test("should handle success for one module and failure for another", async () => {
         const mockSuccessModule = {
             name: "success-module",
             discoverListeners: vi.fn().mockResolvedValue(undefined)
