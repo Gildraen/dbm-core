@@ -1,4 +1,4 @@
-import type { Client, ClientEvents } from "discord.js";
+import type { Client, ClientEvents, Interaction } from "discord.js";
 
 /**
  * Repository interface for managing Discord event listeners
@@ -18,11 +18,23 @@ export interface ListenerRepository {
     ): void;
 
     /**
+     * Register an event handler class that needs the Discord client
+     * @param eventName The Discord event name
+     * @param handlerClass The handler class constructor
+     * @param once Whether this is a one-time listener
+     */
+    registerEventHandlerClass<K extends keyof ClientEvents>(
+        eventName: K,
+        handlerClass: new () => { handle: (client: Client, ...args: ClientEvents[K]) => Promise<unknown> },
+        once?: boolean
+    ): void;
+
+    /**
      * Register the main interaction router with the Discord client
      * @param handler The interaction handler function
      */
     registerInteractionListener(
-        handler: (interaction: any) => Promise<unknown>
+        handler: (interaction: Interaction) => Promise<unknown>
     ): void;
 
     /**

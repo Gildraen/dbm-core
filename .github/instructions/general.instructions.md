@@ -51,7 +51,7 @@ This is a strict project standard that must be followed in all contexts.
 - **Decorators**: All decorators for annotating handlers (`@SlashCommand`, `@EventListener`, etc.)
 
 ### ❌ **What NOT TO Export (Internal Implementation)**
-- **Use Cases**: Application orchestration classes (`StartMigration`, `RegisterDiscordCommands`, `SetupModuleHandlers`)
+- **Use Cases**: Application orchestration classes (`StartMigration`, `RegisterCommands`, `RegisterListeners`)
 - **Repository Interfaces**: Internal abstractions (`CommandRepository`, `ListenerRepository`)
 - **Infrastructure Implementations**: Concrete implementations (`DiscordCommandRepository`, `DiscordListenerRepository`)
 - **Domain Services**: Business logic classes (`ListenerSetupService`, `CommandRegistrationTool`)

@@ -1,5 +1,5 @@
+import type { Interaction } from "discord.js";
 import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
-import type { DiscordInteraction, InteractionHandler } from "app/domain/interface/InteractionHandler.js";
 import { getAllSlashCommands } from "app/infrastructure/registry/DiscordRegistry.js";
 import { getAllUserContextMenus } from "app/infrastructure/decorator/UserContextMenu.js";
 import { getAllMessageContextMenus } from "app/infrastructure/decorator/MessageContextMenu.js";
@@ -12,7 +12,18 @@ import { getAllAutocompleteListeners } from "app/infrastructure/decorator/Autoco
 import { getAllEventListeners } from "app/infrastructure/decorator/EventListener.js";
 
 /**
- * Domain service for listener setup business logic
+ * Infrastructure-specific interaction handler interface
+ */
+interface InteractionHandler {
+    name: string;
+    matches: (interaction: Interaction) => boolean;
+    getRegistry: () => any;
+    getKey: (interaction: Interaction) => string;
+    method: string;
+}
+
+/**
+ * Infrastructure service for listener setup business logic
  * Contains the core logic for registering discovered listeners with Discord
  */
 export class ListenerSetupService {
@@ -63,23 +74,23 @@ export class ListenerSetupService {
         return [
             {
                 name: 'SlashCommand',
-                matches: (i) => i.isChatInputCommand(),
+                matches: (i: Interaction) => i.isChatInputCommand(),
                 getRegistry: getAllSlashCommands,
-                getKey: (i) => i.commandName,
+                getKey: (i: Interaction) => i.isCommand() ? i.commandName : '',
                 method: 'execute'
             },
             {
                 name: 'UserContextMenu',
-                matches: (i) => i.isUserContextMenuCommand(),
+                matches: (i: Interaction) => i.isUserContextMenuCommand(),
                 getRegistry: getAllUserContextMenus,
-                getKey: (i) => i.commandName,
+                getKey: (i: Interaction) => i.isCommand() ? i.commandName : '',
                 method: 'execute'
             },
             {
                 name: 'MessageContextMenu',
-                matches: (i) => i.isMessageContextMenuCommand(),
+                matches: (i: Interaction) => i.isMessageContextMenuCommand(),
                 getRegistry: getAllMessageContextMenus,
-                getKey: (i) => i.commandName,
+                getKey: (i: Interaction) => i.isCommand() ? i.commandName : '',
                 method: 'execute'
             }
         ];
@@ -89,37 +100,37 @@ export class ListenerSetupService {
         return [
             {
                 name: 'StringSelect',
-                matches: (i) => i.isStringSelectMenu(),
+                matches: (i: Interaction) => i.isStringSelectMenu(),
                 getRegistry: getAllStringSelectListeners,
-                getKey: (i) => i.customId,
+                getKey: (i: Interaction) => (i.isMessageComponent() || i.isModalSubmit()) ? i.customId : '',
                 method: 'handle'
             },
             {
                 name: 'UserSelect',
-                matches: (i) => i.isUserSelectMenu(),
+                matches: (i: Interaction) => i.isUserSelectMenu(),
                 getRegistry: getAllUserSelectListeners,
-                getKey: (i) => i.customId,
+                getKey: (i: Interaction) => (i.isMessageComponent() || i.isModalSubmit()) ? i.customId : '',
                 method: 'handle'
             },
             {
                 name: 'RoleSelect',
-                matches: (i) => i.isRoleSelectMenu(),
+                matches: (i: Interaction) => i.isRoleSelectMenu(),
                 getRegistry: getAllRoleSelectListeners,
-                getKey: (i) => i.customId,
+                getKey: (i: Interaction) => (i.isMessageComponent() || i.isModalSubmit()) ? i.customId : '',
                 method: 'handle'
             },
             {
                 name: 'ChannelSelect',
-                matches: (i) => i.isChannelSelectMenu(),
+                matches: (i: Interaction) => i.isChannelSelectMenu(),
                 getRegistry: getAllChannelSelectListeners,
-                getKey: (i) => i.customId,
+                getKey: (i: Interaction) => (i.isMessageComponent() || i.isModalSubmit()) ? i.customId : '',
                 method: 'handle'
             },
             {
                 name: 'MentionableSelect',
-                matches: (i) => i.isMentionableSelectMenu(),
+                matches: (i: Interaction) => i.isMentionableSelectMenu(),
                 getRegistry: getAllMentionableSelectListeners,
-                getKey: (i) => i.customId,
+                getKey: (i: Interaction) => (i.isMessageComponent() || i.isModalSubmit()) ? i.customId : '',
                 method: 'handle'
             }
         ];
@@ -129,9 +140,9 @@ export class ListenerSetupService {
         return [
             {
                 name: 'Autocomplete',
-                matches: (i) => i.isAutocomplete(),
+                matches: (i: Interaction) => i.isAutocomplete(),
                 getRegistry: getAllAutocompleteListeners,
-                getKey: (i) => i.commandName,
+                getKey: (i: Interaction) => (i.isCommand() || i.isAutocomplete()) ? i.commandName : '',
                 method: 'handle'
             }
         ];
@@ -139,14 +150,14 @@ export class ListenerSetupService {
 
     private setupInteractionRouter(): number {
         this.listenerRepository.registerInteractionListener(
-            (interaction: DiscordInteraction) => this.handleIncomingInteraction(interaction)
+            (interaction: Interaction) => this.handleIncomingInteraction(interaction)
         );
 
         // Return total count using strategy pattern
         return this.calculateInteractionListenerCount();
     }
 
-    private async handleIncomingInteraction(interaction: DiscordInteraction): Promise<undefined> {
+    private async handleIncomingInteraction(interaction: Interaction): Promise<undefined> {
         const startTime = performance.now();
 
         try {
@@ -176,12 +187,12 @@ export class ListenerSetupService {
         }
     }
 
-    private findMatchingHandler(interaction: DiscordInteraction): InteractionHandler | undefined {
+    private findMatchingHandler(interaction: Interaction): InteractionHandler | undefined {
         // Use find for early termination - more efficient than loop
         return this.interactionHandlers.find(handler => handler.matches(interaction));
     }
 
-    private async executeHandler(interaction: DiscordInteraction, handler: InteractionHandler): Promise<boolean> {
+    private async executeHandler(interaction: Interaction, handler: InteractionHandler): Promise<boolean> {
         try {
             const key = handler.getKey(interaction as any);
             const registry = handler.getRegistry();
@@ -218,7 +229,7 @@ export class ListenerSetupService {
         }, 0);
     }
 
-    private getInteractionTypeName(interaction: DiscordInteraction): string {
+    private getInteractionTypeName(interaction: Interaction): string {
         if (interaction.isChatInputCommand()) return 'SlashCommand';
         if (interaction.isUserContextMenuCommand()) return 'UserContextMenu';
         if (interaction.isMessageContextMenuCommand()) return 'MessageContextMenu';
@@ -233,7 +244,7 @@ export class ListenerSetupService {
         return `Unknown(${interaction.type})`;
     }
 
-    private getInteractionIdentifier(interaction: DiscordInteraction): string {
+    private getInteractionIdentifier(interaction: Interaction): string {
         if (interaction.isCommand()) return interaction.commandName || 'unknown';
         if (interaction.isMessageComponent()) return interaction.customId || 'unknown';
         if (interaction.isAutocomplete()) return interaction.commandName || 'unknown';

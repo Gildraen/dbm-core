@@ -1,4 +1,4 @@
-import type { Client, ClientEvents } from "discord.js";
+import type { Client, ClientEvents, Interaction } from "discord.js";
 import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
 
 /**
@@ -27,8 +27,24 @@ export class DiscordListenerRepository implements ListenerRepository {
         this.eventListenerCount++;
     }
 
+    registerEventHandlerClass<K extends keyof ClientEvents>(
+        eventName: K,
+        handlerClass: new () => { handle: (client: Client, ...args: ClientEvents[K]) => Promise<unknown> },
+        once: boolean = false
+    ): void {
+        const instance = new handlerClass();
+        const handler = async (...args: ClientEvents[K]) => instance.handle(this.client, ...args);
+        
+        if (once) {
+            this.client.once(eventName, handler);
+        } else {
+            this.client.on(eventName, handler);
+        }
+        this.eventListenerCount++;
+    }
+
     registerInteractionListener(
-        handler: (interaction: any) => Promise<unknown>
+        handler: (interaction: Interaction) => Promise<unknown>
     ): void {
         this.client.on('interactionCreate', handler);
         this.interactionListenerCount++;
