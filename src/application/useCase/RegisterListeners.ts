@@ -1,16 +1,17 @@
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
-import { ListenerSetupService } from "app/domain/service/ListenerSetupService.js";
-import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
+import { ListenerRegistrationService } from "app/domain/service/ListenerRegistrationService.js";
+import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
+import type { PlatformRegistryReader } from "app/domain/interface/PlatformRegistry.js";
 
 export class RegisterListeners {
-    private readonly listenerSetupService: ListenerSetupService;
+    private readonly listenerRegistrationService: ListenerRegistrationService;
 
-    constructor(listenerRepository: ListenerRepository) {
-        this.listenerSetupService = new ListenerSetupService(listenerRepository);
+    public constructor(listenerRepository: ListenerRepository, registry: PlatformRegistryReader) {
+        this.listenerRegistrationService = new ListenerRegistrationService(listenerRepository, registry);
     }
 
-    async execute() {
+    public async execute() {
         const enabledModules = config.getEnabledModules();
 
         for (const { name: moduleName } of enabledModules) {
@@ -24,7 +25,7 @@ export class RegisterListeners {
         }
 
         try {
-            const totalListeners = await this.listenerSetupService.setupDiscoveredListeners();
+            const totalListeners = await this.listenerRegistrationService.registerDiscoveredListeners();
             console.log(`✅ Successfully registered ${totalListeners} listeners`);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

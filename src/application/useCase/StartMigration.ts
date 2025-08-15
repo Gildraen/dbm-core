@@ -1,6 +1,6 @@
 import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
-import type { MigrationRepository } from "app/domain/interface/MigrationRepository.js";
+import type { MigrationRepository } from "app/domain/interface/repository/MigrationRepository.js";
 import type { OperationReport } from "app/domain/types/OperationReport.js";
 import type { OperationResult } from "app/domain/types/OperationResult.js";
 import { OperationStatus } from "app/domain/types/OperationStatus.js";
