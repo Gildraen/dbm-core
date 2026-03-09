@@ -66,6 +66,7 @@ yarn start                    # Start the bot
 Want to see the complete workflow in action? Check out our **[Sample Module](./examples/sample-module/)**!
 
 The sample module demonstrates:
+
 - ✅ Slash commands (`/ping`, `/greet`, `/math`)
 - ✅ Event listeners (message logging, welcome messages)
 - ✅ Autocomplete for command options
@@ -214,33 +215,33 @@ export class BalanceCommand implements SlashCommand {
 
 ### Event Listeners
 
-Get the Discord client as the first parameter, with properly typed event arguments:
+Event handlers receive platform-agnostic event arguments based on the event name:
 
 ```typescript
 @Event("ready")
-export class ReadyHandler implements EventListener<"ready"> {
+export class ReadyHandler implements EventHandler {
   async handle(client: Client): Promise<void> {
     console.log(`Bot ${client.user?.tag} is ready!`);
   }
 }
 
 @Event("messageCreate")
-export class MessageHandler implements EventListener<"messageCreate"> {
-  async handle(client: Client, message: Message): Promise<void> {
-    // Both client and message are properly typed
-    if (message.content === "!ping") {
-      await message.reply("Pong!");
+export class MessageHandler implements EventHandler {
+  async handle(message: PlatformTextMessage): Promise<void> {
+    if (message.content.content === "!ping") {
+      await message.reply({ content: "Pong!" });
     }
   }
 }
 
 @Event("guildMemberAdd")
-export class WelcomeHandler implements EventListener<"guildMemberAdd"> {
-  async handle(client: Client, member: GuildMember): Promise<void> {
-    // member is properly typed as GuildMember
+export class WelcomeHandler implements EventHandler {
+  async handle(member: PlatformGuildMember): Promise<void> {
     const channel = member.guild.systemChannel;
     if (channel) {
-      await channel.send(`Welcome ${member.user.tag} to ${member.guild.name}!`);
+      await channel.send({
+        content: `Welcome ${member.user.tag} to ${member.guild.name}!`,
+      });
     }
   }
 }
