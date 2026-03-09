@@ -1,4 +1,4 @@
-import type { Client, RESTPostAPIApplicationCommandsJSONBody, ApplicationCommandType } from "discord.js";
+import { ApplicationCommandType, PermissionsBitField, type Client, type RESTPostAPIApplicationCommandsJSONBody } from "discord.js";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
 import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
 import type { PlatformSlashCommand } from "app/domain/interface/commands/PlatformSlashCommand.js";
@@ -56,7 +56,7 @@ export class DiscordCommandRepository implements CommandRepository {
      */
     private adaptSlashCommand(command: PlatformSlashCommand): RESTPostAPIApplicationCommandsJSONBody {
         return {
-            type: 1 as ApplicationCommandType.ChatInput, // ApplicationCommandType.ChatInput
+            type: ApplicationCommandType.ChatInput,
             name: command.name,
             description: command.description,
             options: command.options?.map(option => ({
@@ -72,7 +72,7 @@ export class DiscordCommandRepository implements CommandRepository {
                 autocomplete: option.autocomplete,
                 channel_types: option.channelTypes as any
             })),
-            default_member_permissions: command.defaultMemberPermissions?.join('|'),
+            default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
             dm_permission: command.dmPermission,
             nsfw: command.nsfw
         };
@@ -83,9 +83,9 @@ export class DiscordCommandRepository implements CommandRepository {
      */
     private adaptUserContextCommand(command: PlatformUserContextCommand): RESTPostAPIApplicationCommandsJSONBody {
         return {
-            type: 2 as ApplicationCommandType.User, // ApplicationCommandType.User
+            type: ApplicationCommandType.User,
             name: command.name,
-            default_member_permissions: command.defaultMemberPermissions?.join('|'),
+            default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
             dm_permission: command.dmPermission
         };
     }
@@ -95,11 +95,37 @@ export class DiscordCommandRepository implements CommandRepository {
      */
     private adaptMessageContextCommand(command: PlatformMessageContextCommand): RESTPostAPIApplicationCommandsJSONBody {
         return {
-            type: 3 as ApplicationCommandType.Message, // ApplicationCommandType.Message
+            type: ApplicationCommandType.Message,
             name: command.name,
-            default_member_permissions: command.defaultMemberPermissions?.join('|'),
+            default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
             dm_permission: command.dmPermission
         };
+    }
+
+    /**
+     * Discord expects default_member_permissions as a decimal bitfield string.
+     * Supports both numeric-string bitfields and Discord permission flag names.
+     */
+    private adaptDefaultMemberPermissions(permissions?: string[]): string | undefined {
+        if (!permissions || permissions.length === 0) {
+            return undefined;
+        }
+
+        let bitfield = 0n;
+
+        for (const permission of permissions) {
+            if (/^\d+$/.test(permission)) {
+                bitfield |= BigInt(permission);
+                continue;
+            }
+
+            if (permission in PermissionsBitField.Flags) {
+                const flag = PermissionsBitField.Flags[permission as keyof typeof PermissionsBitField.Flags];
+                bitfield |= BigInt(flag.toString());
+            }
+        }
+
+        return bitfield === 0n ? undefined : bitfield.toString();
     }
 
     /**
