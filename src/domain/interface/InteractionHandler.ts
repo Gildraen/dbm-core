@@ -1,36 +1,23 @@
 /**
  * Domain abstraction for platform interactions
- * Provides Clean Architecture compliance by abstracting platform specifics
  */
-export interface PlatformInteraction {
-    // Common interaction properties
-    readonly type: number;
-    readonly id: string;
-    readonly customId?: string;
-    readonly commandName?: string;
+import type { Interaction } from "app/domain/interface/platform/interactions/Interaction.js";
 
-    // Type guards
-    isChatInputCommand(): boolean;
-    isUserContextMenuCommand(): boolean;
-    isMessageContextMenuCommand(): boolean;
-    isButton(): boolean;
-    isStringSelectMenu(): boolean;
-    isUserSelectMenu(): boolean;
-    isRoleSelectMenu(): boolean;
-    isChannelSelectMenu(): boolean;
-    isMentionableSelectMenu(): boolean;
-    isAutocomplete(): boolean;
-    isModalSubmit(): boolean;
-    isCommand(): boolean;
-    isMessageComponent(): boolean;
+export type { Interaction };
+
+/**
+ * Interaction handler interface for handling platform interactions
+ */
+export interface InteractionHandler {
+    handle(interaction: Interaction): Promise<undefined>;
 }
 
 /**
  * Interaction handler strategy - defines how each interaction type should be handled
  */
-export interface InteractionHandler {
+export interface InteractionHandlerStrategy {
     name: string;
-    matches: (interaction: PlatformInteraction) => boolean;
+    matches: (interaction: Interaction) => boolean;
     getRegistry: () => Map<string, new () => any>;
     getKey: (interaction: any) => string;
     method: 'execute' | 'handle';

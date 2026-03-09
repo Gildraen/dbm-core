@@ -1,4 +1,4 @@
-import type { MigrationContext } from "app/domain/types/MigrationContext.js";
+import type { MigrationContext } from "app/domain/interface/migration/MigrationContext.js";
 
 export interface ModuleInterface {
     name: string;

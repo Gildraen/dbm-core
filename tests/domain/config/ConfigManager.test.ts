@@ -12,7 +12,12 @@ describe("ConfigManager", () => {
         (fs.existsSync as Mock).mockReturnValue(true);
         (fs.readFileSync as Mock).mockReturnValue(
             JSON.stringify({
-                "example-module": { enabled: true, settings: {} },
+                core: {
+                    registry: { type: "in-memory" }
+                },
+                modules: {
+                    "example-module": { enabled: true, settings: {} },
+                }
             })
         );
         const configManager = new ConfigManager();
@@ -42,7 +47,12 @@ describe("ConfigManager", () => {
         (fs.existsSync as Mock).mockReturnValue(true);
         (fs.readFileSync as Mock).mockReturnValue(
             JSON.stringify({
-                "example-module": { invalidKey: true },
+                core: {
+                    registry: { type: "in-memory" }
+                },
+                modules: {
+                    "example-module": { invalidKey: true },
+                }
             })
         );
         expect(() => new ConfigManager()).toThrowErrorMatchingInlineSnapshot(`[Error: Invalid configuration structure]`);
@@ -51,7 +61,12 @@ describe("ConfigManager", () => {
         (fs.existsSync as Mock).mockReturnValue(true);
         (fs.readFileSync as Mock).mockReturnValue(
             JSON.stringify({
-                "example-module": { enabled: true, settings: {} },
+                core: {
+                    registry: { type: "in-memory" }
+                },
+                modules: {
+                    "example-module": { enabled: true, settings: {} },
+                }
             })
         );
         const configManager = new ConfigManager();
