@@ -1,6 +1,6 @@
 import type { UserContextMenuHandler } from "app/domain/interface/handlers/commands/UserContextMenuHandler.js";
 import type { UserContextMenuMetadata } from "app/domain/types/metadata/UserContextMenuMetadata.js";
-import { registryProvider } from "app/infrastructure/registry/RegistryProvider.js";
+import { registryProvider } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 

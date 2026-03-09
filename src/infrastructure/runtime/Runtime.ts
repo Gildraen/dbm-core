@@ -2,7 +2,7 @@ import { Client } from "discord.js";
 import { RegisterListeners } from "app/application/useCase/RegisterListeners.js";
 import { DiscordListenerRepository } from "app/infrastructure/discord/repository/DiscordListenerRepository.js";
 import { InMemoryRegistry } from "app/infrastructure/inmemory/registry/InMemoryRegistry.js";
-import { registryProvider } from "app/infrastructure/registry/RegistryProvider.js";
+import { registryProvider } from "app/domain/registry/RegistryProvider.js";
 
 /**
  * Registers all event listeners from enabled modules to the Discord client.

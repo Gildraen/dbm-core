@@ -9,7 +9,9 @@ import {
     isPlatformUserContextCommand,
     isPlatformMessageContextCommand,
 } from "app/domain/types/commands/CommandTypeGuards.js";
-import { COMMAND_TYPES } from "app/domain/types/commands/CommandTypes.js";/**
+import { COMMAND_TYPES } from "app/domain/types/commands/CommandTypes.js";
+
+/**
  * Discord API implementation of CommandRepository
  * Handles registration and management of Discord application commands
  */

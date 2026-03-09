@@ -105,14 +105,26 @@ export function event(name: string): string {
  * parseKey('cmp:polls.vote.submit') → { type: 'cmp', parts: ['polls', 'vote', 'submit'] }
  */
 export function parseKey(key: string): { type: string; parts: string[] } | null {
-    const colonIndex = key.indexOf(':');
-    if (colonIndex === -1) return null;
+    const knownPrefixes: Array<{ type: string; prefix: string }> = [
+        { type: 'context:user', prefix: 'context:user:' },
+        { type: 'context:message', prefix: 'context:message:' },
+        { type: 'slash', prefix: 'slash:' },
+        { type: 'cmp', prefix: 'cmp:' },
+        { type: 'evt', prefix: 'evt:' },
+        { type: 'ac', prefix: 'ac:' }
+    ];
 
-    const type = key.substring(0, colonIndex);
-    const remainder = key.substring(colonIndex + 1);
-    const parts = remainder.split('.');
+    for (const { type, prefix } of knownPrefixes) {
+        if (key.startsWith(prefix)) {
+            const payload = key.slice(prefix.length);
+            return {
+                type,
+                parts: payload.length > 0 ? payload.split('.') : []
+            };
+        }
+    }
 
-    return { type, parts };
+    return null;
 }
 
 /**

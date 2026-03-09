@@ -1,6 +1,6 @@
 import type { SlashCommandHandler } from "app/domain/interface/handlers/commands/SlashCommandHandler.js";
 import type { SlashCommandMetadata } from "app/domain/types/metadata/SlashCommandMetadata.js";
-import { registryProvider } from "app/infrastructure/registry/RegistryProvider.js";
+import { registryProvider } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 

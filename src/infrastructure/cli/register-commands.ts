@@ -6,7 +6,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 import { RegisterCommands } from "app/application/useCase/RegisterCommands.js";
 import { DiscordCommandRepository } from "app/infrastructure/discord/repository/DiscordCommandRepository.js";
-import { registryProvider } from "app/infrastructure/registry/RegistryProvider.js";
+import { registryProvider } from "app/domain/registry/RegistryProvider.js";
 import { createRegistry } from "app/infrastructure/registry/RegistryFactory.js";
 import { config } from "app/domain/config/Config.js";
 

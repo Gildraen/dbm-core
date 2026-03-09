@@ -1,6 +1,6 @@
 import type { RoleSelectHandler } from "app/domain/interface/handlers/components/RoleSelectHandler.js";
 import type { RoleSelectMetadata } from "app/domain/types/metadata/RoleSelectMetadata.js";
-import { registryProvider } from "app/infrastructure/registry/RegistryProvider.js";
+import { registryProvider } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 

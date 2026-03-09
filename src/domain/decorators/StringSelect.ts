@@ -1,6 +1,6 @@
 import type { StringSelectHandler } from "app/domain/interface/handlers/components/StringSelectHandler.js";
 import type { StringSelectMetadata } from "app/domain/types/metadata/StringSelectMetadata.js";
-import { registryProvider } from "app/infrastructure/registry/RegistryProvider.js";
+import { registryProvider } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
