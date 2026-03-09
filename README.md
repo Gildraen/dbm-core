@@ -61,6 +61,94 @@ yarn dbm-register-commands    # Register Discord commands
 yarn start                    # Start the bot
 ```
 
+## � Complete Example Module
+
+Want to see the complete workflow in action? Check out our **[Sample Module](./examples/sample-module/)**!
+
+The sample module demonstrates:
+- ✅ Slash commands (`/ping`, `/greet`, `/math`)
+- ✅ Event listeners (message logging, welcome messages)
+- ✅ Autocomplete for command options
+- ✅ Interactive components (role selector)
+- ✅ Context menu commands (user info, message quote)
+- ✅ Proper module structure with discovery functions
+
+**[→ View Sample Module Documentation](./examples/sample-module/README.md)**
+
+## �🔧 CLI Usage
+
+### Prerequisites
+
+1. **Create configuration file**: Copy `.dbmrc.example.json` to `.dbmrc.json` and configure your modules
+2. **Set Discord token**: Export your Discord bot token as an environment variable
+
+```bash
+# Copy example configuration
+cp .dbmrc.example.json .dbmrc.json
+
+# Edit configuration to enable your modules
+# (See Configuration section below)
+
+# Set your Discord bot token
+export DISCORD_TOKEN="your-bot-token-here"
+```
+
+### Register Commands
+
+The `register-commands` CLI automatically:
+
+- Loads configuration from `.dbmrc.json`
+- Initializes the registry system
+- Discovers all enabled modules
+- Registers slash commands with Discord API
+
+```bash
+# Register all commands from enabled modules
+yarn dbm-register-commands
+
+# Save registration report to file
+yarn dbm-register-commands --output report.json
+
+# Show help
+yarn dbm-register-commands --help
+```
+
+**Important**: The registry is automatically initialized by the CLI. No manual setup required.
+
+### Configuration
+
+The `.dbmrc.json` file controls which modules are loaded:
+
+```json
+{
+  "core": {
+    "registry": {
+      "type": "in-memory"
+    }
+  },
+  "modules": {
+    "@myorg/economy-module": {
+      "enabled": true,
+      "settings": {
+        "dailyReward": 100,
+        "currency": "coins"
+      }
+    },
+    "@myorg/moderation-module": {
+      "enabled": false,
+      "settings": {}
+    }
+  }
+}
+```
+
+**Configuration Structure:**
+
+- `core.registry.type`: Registry implementation (`"in-memory"` or `"discord"`)
+- `modules`: Object mapping module names to their configuration
+- `modules[name].enabled`: Whether to load this module (`true`/`false`)
+- `modules[name].settings`: Module-specific settings (varies per module)
+
 ## 🔧 Module Development
 
 Create independent module packages that implement the `ModuleInterface`:
@@ -129,14 +217,14 @@ export class BalanceCommand implements SlashCommand {
 Get the Discord client as the first parameter, with properly typed event arguments:
 
 ```typescript
-@EventListener("ready")
+@Event("ready")
 export class ReadyHandler implements EventListener<"ready"> {
   async handle(client: Client): Promise<void> {
     console.log(`Bot ${client.user?.tag} is ready!`);
   }
 }
 
-@EventListener("messageCreate")
+@Event("messageCreate")
 export class MessageHandler implements EventListener<"messageCreate"> {
   async handle(client: Client, message: Message): Promise<void> {
     // Both client and message are properly typed
@@ -146,7 +234,7 @@ export class MessageHandler implements EventListener<"messageCreate"> {
   }
 }
 
-@EventListener("guildMemberAdd")
+@Event("guildMemberAdd")
 export class WelcomeHandler implements EventListener<"guildMemberAdd"> {
   async handle(client: Client, member: GuildMember): Promise<void> {
     // member is properly typed as GuildMember
