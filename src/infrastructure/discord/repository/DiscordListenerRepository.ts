@@ -60,32 +60,24 @@ export class DiscordListenerRepository implements ListenerRepository {
      * Adapter to convert Discord.js Interaction to Interaction domain type
      * @param interaction The Discord.js interaction
      */
+    private mapUser(user: DiscordInteraction['user']): Interaction['user'] {
+        return {
+            id: user.id,
+            username: user.username,
+            discriminator: user.discriminator === '0' ? undefined : user.discriminator,
+            displayName: user.displayName || user.globalName || undefined,
+            avatarUrl: user.displayAvatarURL() || undefined,
+            isBot: user.bot || false
+        };
+    }
+
     private adaptInteraction(interaction: DiscordInteraction): Interaction {
-        // Map to the interface expected by the repository
+        // Build only the fields declared in the platform Interaction contract.
         const baseInteraction = {
             id: interaction.id,
-            userId: interaction.user.id,
-            user: {
-                id: interaction.user.id,
-                username: interaction.user.username,
-                discriminator: interaction.user.discriminator === '0' ? undefined : interaction.user.discriminator,
-                displayName: interaction.user.displayName || interaction.user.globalName || undefined,
-                avatarUrl: interaction.user.displayAvatarURL() || undefined,
-                isBot: interaction.user.bot || false
-            },
+            user: this.mapUser(interaction.user),
             guildId: interaction.guildId || undefined,
-            guild: interaction.guild ? {
-                id: interaction.guild.id,
-                name: interaction.guild.name,
-                iconUrl: interaction.guild.iconURL() || undefined
-            } : undefined,
             channelId: interaction.channelId || undefined,
-            channel: interaction.channel ? {
-                id: interaction.channel.id,
-                name: 'name' in interaction.channel ? interaction.channel.name || 'Unknown' : 'Unknown',
-                type: interaction.channel.type.toString() || 'unknown'
-            } : undefined,
-            locale: interaction.locale,
             timestamp: Date.now()
         };
 
@@ -105,14 +97,7 @@ export class DiscordListenerRepository implements ListenerRepository {
                 ...baseInteraction,
                 type: 'context:user',
                 commandName: interaction.commandName,
-                targetUser: {
-                    id: interaction.targetUser.id,
-                    username: interaction.targetUser.username,
-                    discriminator: interaction.targetUser.discriminator === '0' ? undefined : interaction.targetUser.discriminator,
-                    displayName: interaction.targetUser.displayName || interaction.targetUser.globalName || undefined,
-                    avatarUrl: interaction.targetUser.displayAvatarURL() || undefined,
-                    isBot: interaction.targetUser.bot || false
-                }
+                targetUser: this.mapUser(interaction.targetUser)
             };
         }
 
@@ -124,14 +109,7 @@ export class DiscordListenerRepository implements ListenerRepository {
                 targetMessage: {
                     id: interaction.targetMessage.id,
                     content: interaction.targetMessage.content,
-                    author: {
-                        id: interaction.targetMessage.author.id,
-                        username: interaction.targetMessage.author.username,
-                        discriminator: interaction.targetMessage.author.discriminator === '0' ? undefined : interaction.targetMessage.author.discriminator,
-                        displayName: interaction.targetMessage.author.displayName || interaction.targetMessage.author.globalName || undefined,
-                        avatarUrl: interaction.targetMessage.author.displayAvatarURL() || undefined,
-                        isBot: interaction.targetMessage.author.bot || false
-                    }
+                    author: this.mapUser(interaction.targetMessage.author)
                 }
             };
         }
