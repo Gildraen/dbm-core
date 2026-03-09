@@ -32,8 +32,7 @@ export class ConfigManager {
 
         try {
             return ConfigSchema.parse(parsedJson);
-        } catch (error) {
-            console.error("Configuration validation failed:", error);
+        } catch {
             throw new Error("Invalid configuration structure");
         }
     }
