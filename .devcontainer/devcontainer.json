@@ -23,8 +23,6 @@
                     "source.fixAll.eslint": "explicit"
                 },
                 "chat.tools.terminal.autoApprove": {
-                    "rm": true,
-                    "rmdir": true,
                     "find": true,
                     "grep": true,
                     "tree": true,
