@@ -17,6 +17,3 @@ export { ChannelSelect } from "app/domain/decorators/ChannelSelect.js";
 export { MentionableSelect } from "app/domain/decorators/MentionableSelect.js";
 export { Autocomplete } from "app/domain/decorators/Autocomplete.js";
 export { Event } from "app/domain/decorators/Event.js";
-
-// Runtime
-export { registerListeners } from "app/infrastructure/runtime/Runtime.js";
