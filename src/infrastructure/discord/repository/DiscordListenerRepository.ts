@@ -27,13 +27,15 @@ export class DiscordListenerRepository implements ListenerRepository {
         handler: (...args: unknown[]) => Promise<unknown>,
         once: boolean = false
     ): void {
-        const typedHandler = handler as (...args: any[]) => Promise<unknown>;
+        const discordEventName = this.mapper.getDiscordEventKey(eventName);
+        const typedHandler = async (...args: ClientEvents[typeof discordEventName]) => handler(...args);
 
         if (once) {
-            this.client.once(eventName, typedHandler);
+            this.client.once(discordEventName, typedHandler);
         } else {
-            this.client.on(eventName, typedHandler);
+            this.client.on(discordEventName, typedHandler);
         }
+
         this.eventListenerCount++;
     }
 
@@ -43,16 +45,18 @@ export class DiscordListenerRepository implements ListenerRepository {
         once: boolean = false
     ): void {
         const instance = new handlerClass();
-        const handler = async (...args: ClientEvents[typeof eventName]) => {
+        const discordEventName = this.mapper.getDiscordEventKey(eventName);
+        const handler = async (...args: ClientEvents[typeof discordEventName]) => {
             const platformArgs = this.mapper.toPlatformArgs(eventName, args);
             return instance.handle(...platformArgs);
         };
 
         if (once) {
-            this.client.once(eventName, handler);
+            this.client.once(discordEventName, handler);
         } else {
-            this.client.on(eventName, handler);
+            this.client.on(discordEventName, handler);
         }
+
         this.eventListenerCount++;
     }
 

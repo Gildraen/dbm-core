@@ -35,7 +35,14 @@ import type { PlatformTextChannel } from "app/domain/interface/events/PlatformTe
 import type { PlatformEvents } from "app/domain/interface/events/PlatformEvents.js";
 import type { PlatformMessageBody } from "app/domain/types/events/PlatformMessageBody.js";
 import type { PlatformEventArgs } from "app/domain/types/events/PlatformEventArgs.js";
+import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";
 import type { BiMapper, PlatformModelMappers } from 'app/domain/interface/mapper/PlatformMapper.js';
+
+const EVENT_BRIDGE = {
+    ready: 'ready',
+    messageCreate: 'messageCreate',
+    guildMemberAdd: 'guildMemberAdd'
+} as const satisfies Record<PlatformEventKey, keyof ClientEvents>;
 
 /**
  * Adapters to convert Discord.js types to platform-agnostic domain types
@@ -113,6 +120,12 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
 
 
     /**
+     * Bridge between platform event keys and Discord event keys.
+     * Keep this explicit to preserve platform naming independence.
+     */
+    private readonly eventBridge: EventBridgeMap = EVENT_BRIDGE;
+
+    /**
      * Event argument mappers for transforming Discord.js events to platform-agnostic events
      */
     private readonly eventMappers: EventMapper = {
@@ -131,13 +144,23 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
     };
 
     /**
-     * Adapt event arguments based on the event name
-     * @param eventName The name of the event
+     * Resolve Discord event key for a platform event key.
+     */
+    getDiscordEventKey<K extends PlatformEventKey>(eventName: K): EventBridgeMap[K] {
+        return this.eventBridge[eventName];
+    }
+
+    /**
+     * Adapt event arguments based on platform event name
+     * @param platformEventName The platform event key
      * @param args The Discord.js event arguments
      * @returns Platform-agnostic event arguments
      */
-    toPlatformArgs<K extends keyof PlatformEvents & keyof ClientEvents>(eventName: K, args: ClientEvents[K]): PlatformEventArgs<K> {
-        const mapper = this.eventMappers[eventName];
+    toPlatformArgs<K extends PlatformEventKey>(
+        platformEventName: K,
+        args: ClientEvents[EventBridgeMap[K]]
+    ): PlatformEventArgs<K> {
+        const mapper = this.eventMappers[platformEventName];
         return mapper(args);
     }
 
@@ -325,6 +348,8 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
 }
 
 type EventMapper = {
-    [E in keyof PlatformEvents & keyof ClientEvents]:
-    (args: ClientEvents[E]) => PlatformEvents[E];
+    [E in PlatformEventKey]:
+    (args: ClientEvents[EventBridgeMap[E]]) => PlatformEventArgs<E>;
 };
+
+type EventBridgeMap = typeof EVENT_BRIDGE;
