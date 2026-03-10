@@ -93,7 +93,9 @@ export class ListenerRegistrationService {
             console.error(`❌ Error handling interaction:`, error);
             await this.handleInteractionError(interaction, error);
         }
-    }    /**
+    }
+
+    /**
      * Get registry key for platform interaction
      */
     private getInteractionKey(interaction: Interaction): string {

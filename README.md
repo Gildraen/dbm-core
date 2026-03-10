@@ -61,7 +61,7 @@ yarn dbm-register-commands    # Register Discord commands
 yarn start                    # Start the bot
 ```
 
-## � Complete Example Module
+## Complete Example Module
 
 Want to see the complete workflow in action? Check out our **[Sample Module](./examples/sample-module/)**!
 
@@ -76,7 +76,7 @@ The sample module demonstrates:
 
 **[→ View Sample Module Documentation](./examples/sample-module/README.md)**
 
-## �🔧 CLI Usage
+## CLI Usage
 
 ### Prerequisites
 
