@@ -1,15 +1,16 @@
 import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
 import type { Interaction } from "app/domain/interface/InteractionHandler.js";
+import type { PlatformEvents } from "app/domain/interface/events/PlatformEvents.js";
 
 type EventListenerEntry = {
-    eventName: string;
+    eventName: keyof PlatformEvents;
     handler: (...args: unknown[]) => Promise<unknown>;
     once?: boolean;
 };
 
 type EventHandlerClassEntry = {
-    eventName: string;
-    handlerClass: new () => { handle: (...args: unknown[]) => Promise<unknown>; };
+    eventName: keyof PlatformEvents;
+    handlerClass: new () => { handle: (...args: PlatformEvents[keyof PlatformEvents]) => Promise<unknown>; };
     once?: boolean;
 };
 
@@ -19,7 +20,7 @@ export class InMemoryListenerRepository implements ListenerRepository {
     private interactionListeners: Array<(interaction: Interaction) => Promise<unknown>> = [];
 
     registerEventListener(
-        eventName: string,
+        eventName: keyof PlatformEvents,
         handler: (...args: unknown[]) => Promise<unknown>,
         once?: boolean
     ): void {
@@ -27,8 +28,8 @@ export class InMemoryListenerRepository implements ListenerRepository {
     }
 
     registerEventHandlerClass(
-        eventName: string,
-        handlerClass: new () => { handle: (...args: unknown[]) => Promise<unknown>; },
+        eventName: keyof PlatformEvents,
+        handlerClass: new () => { handle: (...args: PlatformEvents[keyof PlatformEvents]) => Promise<unknown>; },
         once?: boolean
     ): void {
         this.eventHandlerClasses.push({ eventName, handlerClass, once });

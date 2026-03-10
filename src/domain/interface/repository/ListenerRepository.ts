@@ -25,8 +25,8 @@ export interface ListenerRepository {
      * @param once Whether this is a one-time listener
      */
     registerEventHandlerClass(
-        eventName: string,
-        handlerClass: new () => { handle: (...args: unknown[]) => Promise<unknown> },
+        eventName: keyof PlatformEvents,
+        handlerClass: new () => { handle: (...args: PlatformEvents[keyof PlatformEvents]) => Promise<unknown> },
         once?: boolean
     ): void;
 

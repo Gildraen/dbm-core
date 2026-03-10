@@ -4,6 +4,7 @@ import type { PlatformRegistryReaderInterface } from "app/domain/interface/regis
 import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
 import type { Kind, KindHandleArgsMap } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
+import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";
 
 /**
  * Domain service for listener setup business logic
@@ -160,12 +161,15 @@ export class ListenerRegistrationService {
     /**
      * Extract event name from registry key
      */
-    private extractEventName(key: string): string {
+    private extractEventName(key: string): PlatformEventKey {
         const parsed = Keys.parseKey(key);
         if (!parsed || parsed.type !== 'evt') {
             throw new Error(`Invalid event key: ${key}`);
         }
-        return parsed.parts.join('.');
+
+        // Event keys are created through typed decorators (@Event), so this cast
+        // reflects the compile-time contract already enforced at registration.
+        return parsed.parts.join('.') as PlatformEventKey;
     }
 
     /**
