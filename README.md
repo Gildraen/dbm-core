@@ -17,40 +17,48 @@ yarn add @gildraen/dbm-core discord.js
 
 ## 🚀 Quick Start
 
-Create a Discord bot with modular architecture:
+Create a module package using the public decorator API:
 
 ```typescript
-// bot/src/BotApplication.ts
-import { Client, GatewayIntentBits } from "discord.js";
-import {
-  RegisterListeners,
-  DiscordListenerRepository,
-} from "@gildraen/dbm-core";
+// @myorg/example-module/src/index.ts
+import type { ModuleInterface } from "@gildraen/dbm-core";
+import { SlashCommand, Event } from "@gildraen/dbm-core";
 
-export class BotApplication {
-  private readonly client: Client;
-  private readonly registerListeners: RegisterListeners;
+@SlashCommand("ping", "Replies with pong")
+export class PingCommand {
+  name = "PingCommand";
 
-  constructor() {
-    this.client = new Client({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-    });
-    const listenerRepository = new DiscordListenerRepository(this.client);
-    this.registerListeners = new RegisterListeners(listenerRepository);
+  async handle(interaction: any): Promise<void> {
+    await interaction.reply("Pong!");
   }
 
-  async start(): Promise<void> {
-    this.client.on("ready", async () => {
-      console.log(`🤖 ${this.client.user?.tag} is ready!`);
-
-      // Set up all module handlers
-      const report = await this.registerListeners.execute();
-      console.log(`✅ ${report.successCount} modules loaded`);
-    });
-
-    await this.client.login(process.env.DISCORD_TOKEN);
+  buildCommand() {
+    return {
+      type: "slash" as const,
+      name: "ping",
+      description: "Replies with pong",
+    };
   }
 }
+
+@Event("ready")
+export class ReadyHandler {
+  name = "ReadyHandler";
+
+  async handle(client: { id: string; name: string }): Promise<void> {
+    console.log(`Bot ${client.name} (${client.id}) is ready`);
+  }
+}
+
+export default {
+  name: "example-module",
+  async discoverCommands() {
+    await import("./index.js");
+  },
+  async discoverListeners() {
+    await import("./index.js");
+  },
+} satisfies ModuleInterface;
 ```
 
 **Deploy with CLI commands:**
@@ -63,9 +71,11 @@ yarn start                    # Start the bot
 
 ## Complete Example Module
 
-Want to see the complete workflow in action? Check out our **[Sample Module](./examples/sample-module/)**!
+Want to see the complete workflow in action? Check out the workflow guide:
 
-The sample module demonstrates:
+**[→ Workflow Overview](./docs/workflows/README.md)**
+
+The workflow documentation demonstrates:
 
 - ✅ Slash commands (`/ping`, `/greet`, `/math`)
 - ✅ Event listeners (message logging, welcome messages)
@@ -73,8 +83,6 @@ The sample module demonstrates:
 - ✅ Interactive components (role selector)
 - ✅ Context menu commands (user info, message quote)
 - ✅ Proper module structure with discovery functions
-
-**[→ View Sample Module Documentation](./examples/sample-module/README.md)**
 
 ## CLI Usage
 
@@ -287,24 +295,11 @@ type OperationReport = {
 ### Use Cases
 
 ```typescript
-import {
-  StartMigration,
-  RegisterCommands,
-  RegisterListeners,
-} from "@gildraen/dbm-core";
-import { Client, GatewayIntentBits } from "discord.js";
+import type { ModuleInterface } from "@gildraen/dbm-core";
+import { SlashCommand, Event } from "@gildraen/dbm-core";
 
-// Create Discord client
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
-
-// Programmatic usage
-const migrationService = new StartMigration(repository);
-const migrationReport = await migrationService.execute();
-
-const commandService = new RegisterCommands(client);
-const commandReport = await commandService.execute();
+// Public API focuses on module authoring primitives
+// (ModuleInterface, Keys, and decorators).
 ```
 
 ## 🧪 Development

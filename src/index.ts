@@ -4,8 +4,6 @@ export {
     type ModuleInterface
 };
 
-export { Keys } from "app/domain/keys/Keys.js";
-
 // Decorators
 export { SlashCommand } from "app/domain/decorators/SlashCommand.js";
 export { UserContextMenu } from "app/domain/decorators/UserContextMenu.js";

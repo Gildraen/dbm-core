@@ -93,10 +93,12 @@ export class ListenerRegistrationService {
 
     private registerEventListener(descriptor: DescriptorInterface<typeof REGISTRY_KINDS.EVENT>): void {
         const eventName = this.extractEventName(descriptor.key);
+        const once = descriptor.metadata.once;
 
         this.listenerRepository.registerEventHandlerClass(
             eventName,
-            descriptor.handlerClass
+            descriptor.handlerClass,
+            once
         );
     }
 

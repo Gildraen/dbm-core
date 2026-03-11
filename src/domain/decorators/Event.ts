@@ -35,7 +35,8 @@ export function Event(eventName: PlatformEventKey, once: boolean = false) {
         // Register in the global registry
         const metadata: EventListenerMetadata = {
             name: target.name,
-            eventName: eventName
+            eventName: eventName,
+            once
         };
 
         const registry = registryProvider.getRegistry();

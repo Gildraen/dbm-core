@@ -7,4 +7,5 @@ import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.
 export type EventListenerMetadata = BaseMetadata & {
     readonly name: string;
     readonly eventName: PlatformEventKey;
+    readonly once?: boolean;
 };
