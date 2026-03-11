@@ -1,4 +1,4 @@
-import { ApplicationCommandType, PermissionsBitField, type Client, type RESTPostAPIApplicationCommandsJSONBody } from "discord.js";
+import { ApplicationCommandType, ChannelType, PermissionsBitField, type Client, type RESTPostAPIApplicationCommandsJSONBody } from "discord.js";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
 import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
 import type { PlatformSlashCommand } from "app/domain/interface/commands/PlatformSlashCommand.js";
@@ -70,7 +70,7 @@ export class DiscordCommandRepository implements CommandRepository {
                 min_length: option.minLength,
                 max_length: option.maxLength,
                 autocomplete: option.autocomplete,
-                channel_types: option.channelTypes as any
+                channel_types: this.adaptChannelTypes(option.channelTypes)
             })),
             default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
             dm_permission: command.dmPermission,
@@ -147,6 +147,46 @@ export class DiscordCommandRepository implements CommandRepository {
             case 'attachment': return 11;
             default: throw new Error(`Unknown option type: "${type}". Valid types: string, integer, boolean, user, channel, role, mentionable, number, attachment.`);
         }
+    }
+
+    /**
+     * Adapt platform channel type strings to Discord ChannelType enum values.
+     * Supports numeric strings (e.g. "0") and enum-like names (e.g. "GuildText", "guild_text").
+     */
+    private adaptChannelTypes(channelTypes?: string[]): ChannelType[] | undefined {
+        if (!channelTypes || channelTypes.length === 0) {
+            return undefined;
+        }
+
+        const enumEntries = Object.entries(ChannelType)
+            .filter(([, value]) => typeof value === 'number') as Array<[string, number]>;
+
+        const validNumericTypes = new Set(enumEntries.map(([, value]) => value));
+        const normalizedNameToType = new Map(
+            enumEntries.map(([name, value]) => [this.normalizeEnumName(name), value as ChannelType])
+        );
+
+        const adapted = channelTypes.map((channelType) => {
+            if (/^\d+$/.test(channelType)) {
+                const numericType = Number(channelType);
+                if (!validNumericTypes.has(numericType)) {
+                    throw new Error(`Unknown channel type: "${channelType}".`);
+                }
+                return numericType as ChannelType;
+            }
+
+            const mapped = normalizedNameToType.get(this.normalizeEnumName(channelType));
+            if (mapped === undefined) {
+                throw new Error(`Unknown channel type: "${channelType}".`);
+            }
+            return mapped;
+        });
+
+        return Array.from(new Set(adapted));
+    }
+
+    private normalizeEnumName(value: string): string {
+        return value.toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
     async clearAllCommands(): Promise<number> {
