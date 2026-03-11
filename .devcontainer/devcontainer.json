@@ -27,7 +27,7 @@
                     "grep": true,
                     "tree": true,
                     "ls": true,
-                    "cd": true,
+                    "cd": true
                 }
             }
         }
