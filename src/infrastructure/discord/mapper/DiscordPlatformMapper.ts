@@ -3,6 +3,7 @@ import type { User } from "app/domain/interface/platform/User.js";
 import type { Guild } from "app/domain/interface/platform/Guild.js";
 import type { Channel } from "app/domain/interface/platform/Channel.js";
 import type { CommandOption } from "app/domain/interface/platform/CommandOption.js";
+import type { CommandOptions } from "app/domain/interface/platform/CommandOptions.js";
 import type { Context } from "app/domain/interface/platform/Context.js";
 import type { Response } from "app/domain/interface/platform/Response.js";
 import type { Choice } from "app/domain/interface/platform/Choice.js";
@@ -37,6 +38,11 @@ import type { PlatformMessageBody } from "app/domain/types/events/PlatformMessag
 import type { PlatformEventArgs } from "app/domain/types/events/PlatformEventArgs.js";
 import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";
 import type { BiMapper, PlatformModelMappers } from 'app/domain/interface/mapper/PlatformMapper.js';
+
+type OptionsResolver = Pick<
+    CommandInteractionOptionResolver,
+    'getString' | 'getInteger' | 'getBoolean' | 'getUser' | 'getChannel' | 'getRole'
+>;
 
 const EVENT_BRIDGE = {
     ready: 'ready',
@@ -185,7 +191,7 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
                 ...baseInteraction,
                 type: 'slash',
                 commandName: interaction.commandName,
-                options: [], // Simplified for now
+                options: DiscordPlatformMapper.adaptCommandOptions(interaction.options),
                 subcommand: interaction.options.getSubcommand(false) || undefined,
                 subcommandGroup: interaction.options.getSubcommandGroup(false) || undefined
             };
@@ -214,15 +220,21 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
         }
 
         if (interaction.isButton() || interaction.isAnySelectMenu() || interaction.isModalSubmit()) {
+            const componentType = interaction.isButton() ? 'button' :
+                interaction.isAnySelectMenu() ? 'select' :
+                    'modal';
+            const values = 'values' in interaction ? interaction.values : undefined;
+
             return {
                 ...baseInteraction,
                 type: 'component',
+                customId: interaction.customId,
+                values,
+                componentType,
                 state: {
                     customId: interaction.customId,
-                    values: 'values' in interaction ? interaction.values : undefined,
-                    componentType: interaction.isButton() ? 'button' :
-                        interaction.isAnySelectMenu() ? 'select' :
-                            'modal'
+                    values,
+                    componentType
                 }
             };
         }
@@ -233,12 +245,13 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
                 ...baseInteraction,
                 type: 'autocomplete',
                 commandName: interaction.commandName,
-                options: [], // Simplified for now
                 focusedOption: {
                     name: focusedOption.name,
-                    type: focusedOption.type.toString(),
-                    value: focusedOption.value,
-                    focused: true
+                    value: String(focusedOption.value)
+                },
+                respond: async (choices: Array<{ name: string; value: string }>) => {
+                    await interaction.respond(choices);
+                    return undefined;
                 }
             };
         }
@@ -280,6 +293,36 @@ export class DiscordPlatformMapper implements PlatformModelMappers<DiscordClient
             id: channel.id,
             name: channel.name || 'Unknown',
             type: channel.type?.toString() || 'unknown'
+        };
+    }
+
+    private static adaptCommandOptions(options: OptionsResolver): CommandOptions {
+        return {
+            getString: (name: string) => options.getString(name),
+            getInteger: (name: string) => options.getInteger(name),
+            getBoolean: (name: string) => options.getBoolean(name),
+            getUser: (name: string) => {
+                const user = options.getUser(name);
+                return user ? DiscordPlatformMapper.mapDiscordUser(user) : null;
+            },
+            getChannel: (name: string) => {
+                const channel = options.getChannel(name);
+                return channel ? DiscordPlatformMapper.mapDiscordChannel(channel) : null;
+            },
+            getRole: (name: string) => {
+                const role = options.getRole(name);
+                if (!role) {
+                    return null;
+                }
+
+                return {
+                    id: role.id,
+                    name: role.name,
+                    color: 'hexColor' in role && typeof role.hexColor === 'string'
+                        ? role.hexColor
+                        : undefined
+                };
+            }
         };
     }
 

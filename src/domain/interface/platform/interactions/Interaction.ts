@@ -19,6 +19,9 @@ export interface Interaction {
     readonly subcommandGroup?: string;
     readonly options?: unknown[] | CommandOptions;
     readonly focusedOption?: { name: string; value: string; type?: string; focused?: boolean };
+    readonly customId?: string;
+    readonly values?: string[];
+    readonly componentType?: string;
     readonly state?: { customId?: string; values?: string[]; componentType?: string };
     readonly targetUser?: User;
     readonly targetMessage?: Message;
@@ -26,4 +29,5 @@ export interface Interaction {
     reply?(content: string | { content?: string; ephemeral?: boolean }): Promise<unknown>;
     followUp?(content: string | { content?: string; ephemeral?: boolean }): Promise<unknown>;
     deferReply?(options?: { ephemeral?: boolean }): Promise<unknown>;
+    respond?(choices: Array<{ name: string; value: string }>): Promise<unknown>;
 }

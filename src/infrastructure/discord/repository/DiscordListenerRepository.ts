@@ -1,10 +1,17 @@
 import type { Client, ClientEvents, Interaction as DiscordInteraction } from "discord.js";
 import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
 import type { Interaction } from "app/domain/interface/InteractionHandler.js";
+import type { CommandOptions } from "app/domain/interface/platform/CommandOptions.js";
 import {
     DiscordPlatformMapper
 } from "app/infrastructure/discord/mapper/DiscordPlatformMapper.js";
 import type { PlatformEvents } from "app/domain/interface/events/PlatformEvents.js";
+import type { CommandInteractionOptionResolver } from "discord.js";
+
+type OptionsResolver = Pick<
+    CommandInteractionOptionResolver,
+    'getString' | 'getInteger' | 'getBoolean' | 'getUser' | 'getChannel' | 'getRole'
+>;
 
 /**
  * Discord client implementation of ListenerRepository
@@ -90,7 +97,7 @@ export class DiscordListenerRepository implements ListenerRepository {
                 ...baseInteraction,
                 type: 'slash',
                 commandName: interaction.commandName,
-                options: [], // Simplified for now
+                options: this.adaptCommandOptions(interaction.options),
                 subcommand: interaction.options.getSubcommand(false) || undefined,
                 subcommandGroup: interaction.options.getSubcommandGroup(false) || undefined
             };
@@ -119,15 +126,21 @@ export class DiscordListenerRepository implements ListenerRepository {
         }
 
         if (interaction.isButton() || interaction.isAnySelectMenu() || interaction.isModalSubmit()) {
+            const componentType = interaction.isButton() ? 'button' :
+                interaction.isAnySelectMenu() ? 'select' :
+                    'modal';
+            const values = 'values' in interaction ? interaction.values : undefined;
+
             return {
                 ...baseInteraction,
                 type: 'component',
+                customId: interaction.customId,
+                values,
+                componentType,
                 state: {
                     customId: interaction.customId,
-                    values: 'values' in interaction ? interaction.values : undefined,
-                    componentType: interaction.isButton() ? 'button' :
-                        interaction.isAnySelectMenu() ? 'select' :
-                            'modal'
+                    values,
+                    componentType
                 }
             };
         }
@@ -138,18 +151,57 @@ export class DiscordListenerRepository implements ListenerRepository {
                 ...baseInteraction,
                 type: 'autocomplete',
                 commandName: interaction.commandName,
-                options: [], // Simplified for now
                 focusedOption: {
                     name: focusedOption.name,
-                    type: focusedOption.type.toString(),
-                    value: focusedOption.value,
-                    focused: true as const
+                    value: String(focusedOption.value)
+                },
+                respond: async (choices: Array<{ name: string; value: string }>) => {
+                    await interaction.respond(choices);
+                    return undefined;
                 }
             };
         }
 
         // Fallback for unknown interaction types
         throw new Error(`Unsupported interaction type: ${interaction.type}`);
+    }
+
+    private adaptCommandOptions(options: OptionsResolver): CommandOptions {
+        return {
+            getString: (name: string) => options.getString(name),
+            getInteger: (name: string) => options.getInteger(name),
+            getBoolean: (name: string) => options.getBoolean(name),
+            getUser: (name: string) => {
+                const user = options.getUser(name);
+                return user ? this.mapUser(user) : null;
+            },
+            getChannel: (name: string) => {
+                const channel = options.getChannel(name);
+                if (!channel) {
+                    return null;
+                }
+
+                return {
+                    id: channel.id,
+                    name: 'name' in channel && typeof channel.name === 'string' ? channel.name : 'Unknown',
+                    type: channel.type.toString()
+                };
+            },
+            getRole: (name: string) => {
+                const role = options.getRole(name);
+                if (!role) {
+                    return null;
+                }
+
+                return {
+                    id: role.id,
+                    name: role.name,
+                    color: 'hexColor' in role && typeof role.hexColor === 'string'
+                        ? role.hexColor
+                        : undefined
+                };
+            }
+        };
     }
 
     registerInteractionListener(
