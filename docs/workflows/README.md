@@ -152,10 +152,9 @@ export async function discoverListeners() {
 ```typescript
 // Command handler
 import { SlashCommand } from "@gildraen/dbm-core";
-import type { SlashCommandHandler } from "@gildraen/dbm-core";
 
 @SlashCommand("ping", "Replies with pong!")
-export class PingCommand implements SlashCommandHandler {
+export class PingCommand {
   name = "PingCommand";
 
   async handle(interaction: CommandInteraction) {
@@ -164,7 +163,7 @@ export class PingCommand implements SlashCommandHandler {
 
   buildCommand() {
     return {
-      type: "SLASH" as const,
+      type: "slash" as const,
       name: "ping",
       description: "Replies with pong!",
     };
@@ -175,14 +174,14 @@ export class PingCommand implements SlashCommandHandler {
 ```typescript
 // Event listener
 import { Event } from "@gildraen/dbm-core";
-import type { EventHandler } from "@gildraen/dbm-core";
+import type { PlatformTextMessage } from "../../src/domain/interface/events/PlatformTextMessage.js";
 
 @Event("messageCreate")
-export class MessageLogger implements EventHandler {
+export class MessageLogger {
   name = "MessageLogger";
 
-  async handle(client: Client, message: Message) {
-    console.log(`Message from ${message.author.tag}: ${message.content}`);
+  async handle(message: PlatformTextMessage): Promise<void> {
+    console.log(`Message received: ${message.content.content}`);
   }
 }
 ```
@@ -226,14 +225,14 @@ export class MessageLogger implements EventHandler {
 
 **Cause**: Tried to use `registryProvider.getRegistry()` before calling `configure()`
 
-**Solution**: Initialize registry during bootstrap:
+**Solution**: Initialize registry during your app bootstrap:
 
 ```typescript
-import { config, createRegistry, registryProvider } from "@gildraen/dbm-core";
+// app/bootstrap/registry.ts
+import { createRegistryFromConfig, configureRegistry } from "./registry-bootstrap";
 
-const coreConfig = config.getCoreConfig();
-const registry = createRegistry(coreConfig.registry);
-registryProvider.configure(registry);
+const registry = createRegistryFromConfig();
+configureRegistry(registry); // Must run before any decorated classes are imported
 ```
 
 ### Decorator Doesn't Register Handler
