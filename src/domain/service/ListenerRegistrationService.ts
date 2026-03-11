@@ -3,6 +3,7 @@ import type { Interaction } from "app/domain/interface/InteractionHandler.js";
 import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
 import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
 import type { Kind, KindHandleArgsMap } from "app/domain/interface/registry/types.js";
+import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";
 
@@ -71,7 +72,7 @@ export class ListenerRegistrationService {
      * Register all event listeners discovered in registry
      */
     private registerEventListeners(failures: RegistrationFailure[]): number {
-        const eventDescriptors = this.registry.list('event');
+        const eventDescriptors = this.registry.list(REGISTRY_KINDS.EVENT);
         let registeredEventListeners = 0;
 
         for (const descriptor of eventDescriptors) {
@@ -90,7 +91,7 @@ export class ListenerRegistrationService {
         return registeredEventListeners;
     }
 
-    private registerEventListener(descriptor: DescriptorInterface<'event'>): void {
+    private registerEventListener(descriptor: DescriptorInterface<typeof REGISTRY_KINDS.EVENT>): void {
         const eventName = this.extractEventName(descriptor.key);
 
         this.listenerRepository.registerEventHandlerClass(
@@ -149,10 +150,7 @@ export class ListenerRegistrationService {
                 return Keys.contextMessage(interaction.commandName);
 
             case 'component':
-                if (!interaction.state || typeof interaction.state !== 'object' || !('customId' in interaction.state)) {
-                    throw new Error('State with customId required for component interaction');
-                }
-                const customId = interaction.state.customId;
+                const customId = interaction.customId ?? interaction.state?.customId;
                 if (typeof customId !== 'string') {
                     throw new Error('customId must be a string');
                 }
@@ -226,7 +224,7 @@ export class ListenerRegistrationService {
         failures: RegistrationFailure[]
     ): void {
         const summary = this.registry.size();
-        const discoveredEventListeners = this.registry.size('event');
+        const discoveredEventListeners = this.registry.size(REGISTRY_KINDS.EVENT);
         const discoveredInteractionHandlers = summary - discoveredEventListeners;
 
         console.log(`✅ Attached ${totalListeners} runtime listeners:`);
@@ -260,20 +258,20 @@ export class ListenerRegistrationService {
     } {
         // Sum all component kinds
         const componentCount =
-            this.registry.size('component:string-select') +
-            this.registry.size('component:user-select') +
-            this.registry.size('component:role-select') +
-            this.registry.size('component:channel-select') +
-            this.registry.size('component:mentionable-select') +
-            this.registry.size('component:button') +
-            this.registry.size('component:modal');
+            this.registry.size(REGISTRY_KINDS.STRING_SELECT) +
+            this.registry.size(REGISTRY_KINDS.USER_SELECT) +
+            this.registry.size(REGISTRY_KINDS.ROLE_SELECT) +
+            this.registry.size(REGISTRY_KINDS.CHANNEL_SELECT) +
+            this.registry.size(REGISTRY_KINDS.MENTIONABLE_SELECT) +
+            this.registry.size(REGISTRY_KINDS.BUTTON) +
+            this.registry.size(REGISTRY_KINDS.MODAL);
 
         return {
-            events: this.registry.size('event'),
-            slashCommands: this.registry.size('slash'),
-            contextMenus: this.registry.size('context:user') + this.registry.size('context:message'),
+            events: this.registry.size(REGISTRY_KINDS.EVENT),
+            slashCommands: this.registry.size(REGISTRY_KINDS.SLASH),
+            contextMenus: this.registry.size(REGISTRY_KINDS.CONTEXT_USER) + this.registry.size(REGISTRY_KINDS.CONTEXT_MESSAGE),
             components: componentCount,
-            autocomplete: this.registry.size('autocomplete'),
+            autocomplete: this.registry.size(REGISTRY_KINDS.AUTOCOMPLETE),
             total: this.registry.size()
         };
     }
