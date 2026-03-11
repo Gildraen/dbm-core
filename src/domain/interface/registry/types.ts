@@ -61,6 +61,11 @@ export const REGISTRY_KINDS = {
 
 export type Kind = typeof REGISTRY_KINDS[keyof typeof REGISTRY_KINDS];
 
+export type CommandKind =
+    | typeof REGISTRY_KINDS.SLASH
+    | typeof REGISTRY_KINDS.CONTEXT_USER
+    | typeof REGISTRY_KINDS.CONTEXT_MESSAGE;
+
 /**
  * Type-safe mapping between Kind and its corresponding metadata type
  */

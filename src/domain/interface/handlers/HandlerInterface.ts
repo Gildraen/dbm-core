@@ -1,4 +1,3 @@
-import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
 import type { Kind, KindHandleArgsMap } from "../registry/types.js";
 
 /**
@@ -12,11 +11,6 @@ export interface HandlerInterface<K extends Kind = Kind> {
      * The name/identifier of the handler
      */
     readonly name: string;
-
-    /**
-     * Build the platform command/registration payload
-     */
-    buildCommand(): PlatformCommand;
 
     /**
      * Handle the interaction or event with type-safe parameters

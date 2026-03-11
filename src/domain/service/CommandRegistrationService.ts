@@ -1,6 +1,6 @@
 import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
 import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
-import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
+import { REGISTRY_KINDS, type CommandKind } from "app/domain/interface/registry/types.js";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
 import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
 
@@ -44,7 +44,7 @@ export class CommandRegistrationService {
      * Build platform command payloads from registry descriptors
      */
     private buildCommandsFromRegistry(): PlatformCommand[] {
-        const commandKinds = [
+        const commandKinds: CommandKind[] = [
             REGISTRY_KINDS.SLASH,
             REGISTRY_KINDS.CONTEXT_USER,
             REGISTRY_KINDS.CONTEXT_MESSAGE
@@ -58,7 +58,7 @@ export class CommandRegistrationService {
     /**
      * Build a platform command from descriptor
      */
-    private buildCommand(descriptor: DescriptorInterface): PlatformCommand {
+    private buildCommand(descriptor: DescriptorInterface<CommandKind>): PlatformCommand {
         const HandlerClass = descriptor.handlerClass;
         const handler = new HandlerClass();
 
