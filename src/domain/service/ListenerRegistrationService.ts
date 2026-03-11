@@ -190,12 +190,12 @@ export class ListenerRegistrationService {
     private logRegisterSummary(totalListeners: number): void {
         const summary = this.registry.size();
         const eventCount = this.registry.size('event');
-        const interactionCount = summary - eventCount;
+        const discoveredInteractionHandlers = summary - eventCount;
 
-        console.log(`✅ Registered ${totalListeners} listeners:`);
+        console.log(`✅ Attached ${totalListeners} runtime listeners:`);
         console.log(`   - ${eventCount} event listeners`);
-        console.log(`   - ${interactionCount} interaction handlers`);
         console.log(`   - 1 interaction router`);
+        console.log(`ℹ️  Discovered ${discoveredInteractionHandlers} interaction handlers in registry`);
     }
 
     /**

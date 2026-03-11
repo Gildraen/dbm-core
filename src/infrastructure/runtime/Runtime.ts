@@ -3,6 +3,7 @@ import { RegisterListeners } from "app/application/useCase/RegisterListeners.js"
 import { DiscordListenerRepository } from "app/infrastructure/discord/repository/DiscordListenerRepository.js";
 import { InMemoryRegistry } from "app/infrastructure/inmemory/registry/InMemoryRegistry.js";
 import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import type { PlatformRegistryInterface } from "app/domain/interface/registry/PlatformRegistryInterface.js";
 
 /**
  * Registers all event listeners from enabled modules to the Discord client.
@@ -12,7 +13,7 @@ import { registryProvider } from "app/domain/registry/RegistryProvider.js";
  */
 export async function registerListeners(client: Client) {
     // Ensure registry is configured with a default implementation if not already set.
-    let registry;
+    let registry: PlatformRegistryInterface;
     if (registryProvider.isConfigured()) {
         registry = registryProvider.getRegistry();
     } else {
