@@ -76,7 +76,7 @@ export class DiscordListenerRepository implements ListenerRepository {
             id: user.id,
             username: user.username,
             discriminator: user.discriminator === '0' ? undefined : user.discriminator,
-            displayName: user.displayName || user.globalName || undefined,
+            displayName: user.displayName || user.globalName || user.username,
             avatarUrl: user.displayAvatarURL() || undefined,
             isBot: user.bot || false
         };
