@@ -122,7 +122,10 @@ export class DiscordCommandRepository implements CommandRepository {
             if (permission in PermissionsBitField.Flags) {
                 const flag = PermissionsBitField.Flags[permission as keyof typeof PermissionsBitField.Flags];
                 bitfield |= BigInt(flag.toString());
+                continue;
             }
+
+            throw new Error(`Unknown permission flag: "${permission}". Check spelling against PermissionsBitField.Flags.`);
         }
 
         return bitfield === 0n ? undefined : bitfield.toString();
@@ -142,7 +145,7 @@ export class DiscordCommandRepository implements CommandRepository {
             case 'mentionable': return 9;
             case 'number': return 10;
             case 'attachment': return 11;
-            default: return 3; // Default to string
+            default: throw new Error(`Unknown option type: "${type}". Valid types: string, integer, boolean, user, channel, role, mentionable, number, attachment.`);
         }
     }
 

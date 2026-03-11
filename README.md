@@ -215,13 +215,13 @@ export class BalanceCommand implements SlashCommand {
 
 ### Event Listeners
 
-Event handlers receive platform-agnostic event arguments based on the event name:
+Event handlers receive platform-agnostic event arguments from `PlatformEvents`:
 
 ```typescript
 @Event("ready")
 export class ReadyHandler implements EventHandler {
   async handle(client: Client): Promise<void> {
-    console.log(`Bot ${client.user?.tag} is ready!`);
+    console.log(`Bot ${client.name} (${client.id}) is ready!`);
   }
 }
 

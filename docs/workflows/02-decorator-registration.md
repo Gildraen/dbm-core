@@ -105,14 +105,14 @@ graph TB
         end
 
         subgraph Listeners["Listeners"]
-            Event1[Key: 'event:messageCreate'<br/>Kind: EVENT<br/>Metadata: EventListenerMetadata<br/>Handler: MessageLogger]
-            Event2[Key: 'event:ready'<br/>Kind: EVENT<br/>Metadata: EventListenerMetadata<br/>Handler: ReadyHandler]
-            Auto[Key: 'autocomplete:slash:music'<br/>Kind: AUTOCOMPLETE<br/>Metadata: AutocompleteListenerMetadata<br/>Handler: MusicAutocomplete]
+            Event1[Key: 'evt:messageCreate'<br/>Kind: EVENT<br/>Metadata: EventListenerMetadata<br/>Handler: MessageLogger]
+            Event2[Key: 'evt:ready'<br/>Kind: EVENT<br/>Metadata: EventListenerMetadata<br/>Handler: ReadyHandler]
+            Auto[Key: 'ac:slash:music'<br/>Kind: AUTOCOMPLETE<br/>Metadata: AutocompleteListenerMetadata<br/>Handler: MusicAutocomplete]
         end
 
         subgraph Components["Components"]
-            String[Key: 'component:role-selector'<br/>Kind: STRING_SELECT<br/>Metadata: StringSelectMetadata<br/>Handler: RoleSelector]
-            User[Key: 'component:user-picker'<br/>Kind: USER_SELECT<br/>Metadata: UserSelectMetadata<br/>Handler: UserPicker]
+            String[Key: 'cmp:role-selector'<br/>Kind: STRING_SELECT<br/>Metadata: StringSelectMetadata<br/>Handler: RoleSelector]
+            User[Key: 'cmp:user-picker'<br/>Kind: USER_SELECT<br/>Metadata: UserSelectMetadata<br/>Handler: UserPicker]
         end
     end
 

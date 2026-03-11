@@ -6,4 +6,5 @@ import type { BaseMetadata } from "./BaseMetadata.js";
 export type AutocompleteListenerMetadata = BaseMetadata & {
     readonly name: string;
     readonly commandName: string;
+    readonly optionName?: string;
 };

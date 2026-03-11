@@ -112,12 +112,10 @@ flowchart TB
 ## Example Implementation
 
 ```typescript
-// bootstrap.ts
-import { config } from "@gildraen/dbm-core";
-import {
-  createRegistry,
-  registryProvider,
-} from "@gildraen/dbm-core/infrastructure";
+// bootstrap.ts (internal to dbm-core)
+import { config } from "../src/domain/config/Config.js";
+import { createRegistry } from "../src/infrastructure/registry/RegistryFactory.js";
+import { registryProvider } from "../src/domain/registry/RegistryProvider.js";
 
 export function initializeCore() {
   // 1. Get core configuration

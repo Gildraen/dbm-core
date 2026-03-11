@@ -105,7 +105,14 @@ export class ListenerRegistrationService {
     private async routeInteraction(interaction: Interaction): Promise<unknown> {
         try {
             const key = this.getInteractionKey(interaction);
-            const descriptor = this.registry.get(key);
+            let descriptor = this.registry.get(key);
+
+            // For autocomplete, fall back to the base command key (without option suffix)
+            // so that @Autocomplete('cmd') handlers catch all options of that command
+            if (!descriptor && interaction.type === 'autocomplete' && interaction.commandName) {
+                const fallbackKey = Keys.autocomplete(Keys.slash(interaction.commandName));
+                descriptor = this.registry.get(fallbackKey);
+            }
 
             if (!descriptor) {
                 console.warn(`⚠️  No handler found for interaction key: ${key}`);

@@ -325,20 +325,20 @@ graph TB
         direction TB
 
         subgraph Events["EVENT Kind"]
-            E1["Key: event:messageCreate<br/>Handler: MessageLogger"]
-            E2["Key: event:ready<br/>Handler: ReadyHandler"]
-            E3["Key: event:guildMemberAdd<br/>Handler: WelcomeHandler"]
+            E1["Key: evt:messageCreate<br/>Handler: MessageLogger"]
+            E2["Key: evt:ready<br/>Handler: ReadyHandler"]
+            E3["Key: evt:guildMemberAdd<br/>Handler: WelcomeHandler"]
         end
 
         subgraph Autocomplete["AUTOCOMPLETE Kind"]
-            A1["Key: autocomplete:slash:music<br/>Handler: MusicAutocomplete"]
-            A2["Key: autocomplete:slash:search<br/>Handler: SearchAutocomplete"]
+            A1["Key: ac:slash:music<br/>Handler: MusicAutocomplete"]
+            A2["Key: ac:slash:search<br/>Handler: SearchAutocomplete"]
         end
 
         subgraph SelectMenus["Component Kinds"]
-            S1["Key: component:role-selector<br/>Kind: STRING_SELECT<br/>Handler: RoleSelector"]
-            S2["Key: component:user-picker<br/>Kind: USER_SELECT<br/>Handler: UserPicker"]
-            S3["Key: component:role-filter<br/>Kind: ROLE_SELECT<br/>Handler: RoleFilter"]
+            S1["Key: cmp:role-selector<br/>Kind: STRING_SELECT<br/>Handler: RoleSelector"]
+            S2["Key: cmp:user-picker<br/>Kind: USER_SELECT<br/>Handler: UserPicker"]
+            S3["Key: cmp:role-filter<br/>Kind: ROLE_SELECT<br/>Handler: RoleFilter"]
         end
     end
 
