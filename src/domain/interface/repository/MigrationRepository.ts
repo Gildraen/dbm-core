@@ -10,7 +10,7 @@ export interface MigrationRepository {
     getConnectionInfo?(): Record<string, unknown>;
 
     /** Clean up resources */
-    disconnect?(): Promise<undefined>;
+    disconnect?(): Promise<void>;
 }
 
 /**
