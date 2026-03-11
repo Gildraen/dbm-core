@@ -2,7 +2,7 @@ import type { ListenerRepository } from "app/domain/interface/repository/Listene
 import type { Interaction } from "app/domain/interface/InteractionHandler.js";
 import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
 import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
-import type { Kind, KindHandleArgsMap } from "app/domain/interface/registry/types.js";
+import type { Kind } from "app/domain/interface/registry/types.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";

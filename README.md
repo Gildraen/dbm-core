@@ -3,7 +3,7 @@
 ## 🎯 Features
 
 - **Module Orchestration**: Coordinate independent module packages
-- **CLI-First Deployment**: Separate migration, command registration, and runtime phases
+- **CLI-First Deployment**: Separate command registration and runtime phases
 - **TypeScript & Clean Architecture**: Domain-driven design with strict typing
 - **Discord.js Integration**: Built-in support for Discord.js v14+
 
@@ -53,10 +53,10 @@ export class ReadyHandler {
 export default {
   name: "example-module",
   async discoverCommands() {
-    await import("./index.js");
+    await import("./commands/PingCommand.js");
   },
   async discoverListeners() {
-    await import("./index.js");
+    await import("./listeners/ReadyHandler.js");
   },
 } satisfies ModuleInterface;
 ```
@@ -64,7 +64,6 @@ export default {
 **Deploy with CLI commands:**
 
 ```bash
-yarn dbm-migrate              # Run database migrations
 yarn dbm-register-commands    # Register Discord commands
 yarn start                    # Start the bot
 ```

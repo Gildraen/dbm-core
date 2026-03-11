@@ -24,7 +24,7 @@ import { Keys } from "app/domain/keys/Keys.js";
 export function SlashCommand(name: string, description: string) {
     return function <T extends new () => SlashCommandHandler>(target: T): T {
         const metadata: SlashCommandMetadata = {
-            name: target.name,
+            name: name,
             description: description
         };
 
