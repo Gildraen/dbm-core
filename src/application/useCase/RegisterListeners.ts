@@ -25,7 +25,7 @@ export class RegisterListeners {
         }
 
         try {
-            const totalListeners = await this.listenerRegistrationService.registerDiscoveredListeners();
+            const totalListeners = this.listenerRegistrationService.registerDiscoveredListeners();
             console.log(`✅ Successfully registered ${totalListeners} listeners`);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

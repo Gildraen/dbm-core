@@ -29,16 +29,27 @@ export class ListenerRegistrationService {
      * Returns the total number of listeners registered
      */
     registerDiscoveredListeners(): number {
-        let totalListeners = 0;
+        const failures: RegistrationFailure[] = [];
+        let attachedInteractionRouter = 0;
+        let attachedEventListeners = 0;
 
         // Register interaction router
-        totalListeners += this.registerInteractionRouter();
+        try {
+            attachedInteractionRouter = this.registerInteractionRouter();
+        } catch (error) {
+            failures.push({
+                target: 'interaction-router',
+                message: this.formatErrorMessage(error)
+            });
+        }
 
         // Register event listeners
-        totalListeners += this.registerEventListeners();
+        attachedEventListeners = this.registerEventListeners(failures);
+
+        const totalListeners = attachedInteractionRouter + attachedEventListeners;
 
         // Log summary
-        this.logRegisterSummary(totalListeners);
+        this.logRegisterSummary(totalListeners, attachedInteractionRouter, attachedEventListeners, failures);
 
         return totalListeners;
     }
@@ -52,26 +63,40 @@ export class ListenerRegistrationService {
                 await this.routeInteraction(interaction);
             }
         );
+
         return 1;
     }
 
     /**
      * Register all event listeners discovered in registry
      */
-    private registerEventListeners(): number {
+    private registerEventListeners(failures: RegistrationFailure[]): number {
         const eventDescriptors = this.registry.list('event');
+        let registeredEventListeners = 0;
 
         for (const descriptor of eventDescriptors) {
-            const eventName = this.extractEventName(descriptor.key);
+            try {
+                this.registerEventListener(descriptor);
 
-            // Type system now knows descriptor.handlerClass returns EventHandler with handle method
-            this.listenerRepository.registerEventHandlerClass(
-                eventName,
-                descriptor.handlerClass
-            );
+                registeredEventListeners += 1;
+            } catch (error) {
+                failures.push({
+                    target: `event-listener:${descriptor.key}`,
+                    message: this.formatErrorMessage(error)
+                });
+            }
         }
 
-        return eventDescriptors.length;
+        return registeredEventListeners;
+    }
+
+    private registerEventListener(descriptor: DescriptorInterface<'event'>): void {
+        const eventName = this.extractEventName(descriptor.key);
+
+        this.listenerRepository.registerEventHandlerClass(
+            eventName,
+            descriptor.handlerClass
+        );
     }
 
     /**
@@ -187,15 +212,32 @@ export class ListenerRegistrationService {
     /**
      * Log registration summary
      */
-    private logRegisterSummary(totalListeners: number): void {
+    private logRegisterSummary(
+        totalListeners: number,
+        attachedInteractionRouter: number,
+        attachedEventListeners: number,
+        failures: RegistrationFailure[]
+    ): void {
         const summary = this.registry.size();
-        const eventCount = this.registry.size('event');
-        const discoveredInteractionHandlers = summary - eventCount;
+        const discoveredEventListeners = this.registry.size('event');
+        const discoveredInteractionHandlers = summary - discoveredEventListeners;
 
         console.log(`✅ Attached ${totalListeners} runtime listeners:`);
-        console.log(`   - ${eventCount} event listeners`);
-        console.log(`   - 1 interaction router`);
+        console.log(`   - ${attachedEventListeners} event listeners`);
+        console.log(`   - ${attachedInteractionRouter} interaction router`);
+        console.log(`ℹ️  Discovered ${discoveredEventListeners} event listeners in registry`);
         console.log(`ℹ️  Discovered ${discoveredInteractionHandlers} interaction handlers in registry`);
+
+        if (failures.length > 0) {
+            console.error(`❌ Encountered ${failures.length} listener registration error(s):`);
+            for (const failure of failures) {
+                console.error(`   - ${failure.target}: ${failure.message}`);
+            }
+        }
+    }
+
+    private formatErrorMessage(error: unknown): string {
+        return error instanceof Error ? error.message : String(error);
     }
 
     /**
@@ -229,3 +271,8 @@ export class ListenerRegistrationService {
         };
     }
 }
+
+type RegistrationFailure = {
+    target: string;
+    message: string;
+};
