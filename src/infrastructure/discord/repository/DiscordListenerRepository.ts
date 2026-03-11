@@ -22,13 +22,13 @@ export class DiscordListenerRepository implements ListenerRepository {
         this.mapper = new DiscordPlatformMapper();
     }
 
-    registerEventListener(
-        eventName: keyof PlatformEvents,
-        handler: (...args: unknown[]) => Promise<unknown>,
+    registerEventListener<K extends keyof PlatformEvents>(
+        eventName: K,
+        handler: (...args: PlatformEvents[K]) => Promise<unknown>,
         once: boolean = false
     ): void {
         const discordEventName = this.mapper.getDiscordEventKey(eventName);
-        const typedHandler = async (...args: ClientEvents[typeof discordEventName]) => handler(...args);
+        const typedHandler = async (...args: ClientEvents[typeof discordEventName]) => handler(...this.mapper.toPlatformArgs(eventName, args));
 
         if (once) {
             this.client.once(discordEventName, typedHandler);

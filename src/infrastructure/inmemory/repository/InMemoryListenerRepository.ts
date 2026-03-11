@@ -3,36 +3,40 @@ import type { Interaction } from "app/domain/interface/InteractionHandler.js";
 import type { PlatformEvents } from "app/domain/interface/events/PlatformEvents.js";
 
 type EventListenerEntry = {
-    eventName: keyof PlatformEvents;
-    handler: (...args: unknown[]) => Promise<unknown>;
-    once?: boolean;
-};
+    [K in keyof PlatformEvents]: {
+        eventName: K;
+        handler: (...args: PlatformEvents[K]) => Promise<unknown>;
+        once?: boolean;
+    };
+}[keyof PlatformEvents];
 
 type EventHandlerClassEntry = {
-    eventName: keyof PlatformEvents;
-    handlerClass: new () => { handle: (...args: PlatformEvents[keyof PlatformEvents]) => Promise<unknown>; };
-    once?: boolean;
-};
+    [K in keyof PlatformEvents]: {
+        eventName: K;
+        handlerClass: new () => { handle: (...args: PlatformEvents[K]) => Promise<unknown> };
+        once?: boolean;
+    };
+}[keyof PlatformEvents];
 
 export class InMemoryListenerRepository implements ListenerRepository {
     private eventListeners: Array<EventListenerEntry> = [];
     private eventHandlerClasses: Array<EventHandlerClassEntry> = [];
     private interactionListeners: Array<(interaction: Interaction) => Promise<unknown>> = [];
 
-    registerEventListener(
-        eventName: keyof PlatformEvents,
-        handler: (...args: unknown[]) => Promise<unknown>,
+    registerEventListener<K extends keyof PlatformEvents>(
+        eventName: K,
+        handler: (...args: PlatformEvents[K]) => Promise<unknown>,
         once?: boolean
     ): void {
-        this.eventListeners.push({ eventName, handler, once });
+        this.eventListeners.push({ eventName, handler, once } as EventListenerEntry);
     }
 
-    registerEventHandlerClass(
-        eventName: keyof PlatformEvents,
-        handlerClass: new () => { handle: (...args: PlatformEvents[keyof PlatformEvents]) => Promise<unknown>; },
+    registerEventHandlerClass<K extends keyof PlatformEvents>(
+        eventName: K,
+        handlerClass: new () => { handle: (...args: PlatformEvents[K]) => Promise<unknown> },
         once?: boolean
     ): void {
-        this.eventHandlerClasses.push({ eventName, handlerClass, once });
+        this.eventHandlerClasses.push({ eventName, handlerClass, once } as EventHandlerClassEntry);
     }
 
     registerInteractionListener(

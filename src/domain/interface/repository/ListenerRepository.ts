@@ -12,9 +12,9 @@ export interface ListenerRepository {
      * @param handler The event handler function
      * @param once Whether this is a one-time listener
      */
-    registerEventListener(
-        eventName: keyof PlatformEvents,
-        handler: (...args: unknown[]) => Promise<unknown>,
+    registerEventListener<K extends keyof PlatformEvents>(
+        eventName: K,
+        handler: (...args: PlatformEvents[K]) => Promise<unknown>,
         once?: boolean
     ): void;
 
@@ -24,9 +24,9 @@ export interface ListenerRepository {
      * @param handlerClass The handler class constructor
      * @param once Whether this is a one-time listener
      */
-    registerEventHandlerClass(
-        eventName: keyof PlatformEvents,
-        handlerClass: new () => { handle: (...args: PlatformEvents[keyof PlatformEvents]) => Promise<unknown> },
+    registerEventHandlerClass<K extends keyof PlatformEvents>(
+        eventName: K,
+        handlerClass: new () => { handle: (...args: PlatformEvents[K]) => Promise<unknown> },
         once?: boolean
     ): void;
 
