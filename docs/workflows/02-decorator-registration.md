@@ -184,20 +184,22 @@ timeline
 ```typescript
 // PingCommand.ts
 import { SlashCommand } from "@gildraen/dbm-core";
-import type { SlashCommandHandler } from "@gildraen/dbm-core";
-import type { CommandInteraction } from "discord.js";
+
+type PingInteraction = {
+  reply(content: string): Promise<unknown>;
+};
 
 @SlashCommand("ping", "Replies with pong!")
-export class PingCommand implements SlashCommandHandler {
+export class PingCommand {
   name = "PingCommand";
 
-  async handle(interaction: CommandInteraction): Promise<void> {
+  async handle(interaction: PingInteraction): Promise<void> {
     await interaction.reply("Pong!");
   }
 
   buildCommand() {
     return {
-      type: "SLASH" as const,
+      type: "slash" as const,
       name: "ping",
       description: "Replies with pong!",
     };
@@ -207,7 +209,7 @@ export class PingCommand implements SlashCommandHandler {
 
 When this file is imported, the decorator:
 
-1. ✅ Creates metadata: `{ name: 'PingCommand', description: 'Replies with pong!' }`
+1. ✅ Creates metadata: `{ name: 'ping', description: 'Replies with pong!' }`
 2. ✅ Gets registry from provider
 3. ✅ Creates key: `'slash:ping'`
 4. ✅ Stores descriptor with metadata and class reference

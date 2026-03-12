@@ -17,15 +17,15 @@ import { Keys } from "app/domain/keys/Keys.js";
  * ```typescript
  * @Event('messageCreate')
  * export class MessageLogger implements EventHandler {
- *     async handle(client: Client, message: Message): Promise<void> {
- *         console.log(`Message from ${message.author.tag}: ${message.content}`);
+ *     async handle(message: PlatformTextMessage): Promise<void> {
+ *         console.log(`Message received: ${message.content.content}`);
  *     }
  * }
  *
  * @Event('ready', true)
  * export class ReadyHandler implements EventHandler {
  *     async handle(client: Client): Promise<void> {
- *         console.log(`Bot ${client.user?.tag} is ready!`);
+ *         console.log(`Bot ${client.name} (${client.id}) is ready!`);
  *     }
  * }
  * ```
