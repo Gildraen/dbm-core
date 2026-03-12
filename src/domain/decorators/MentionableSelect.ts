@@ -19,7 +19,7 @@ export function MentionableSelect(customId: string) {
 
         const registry = registryProvider.getRegistry();
         registry.upsert({
-            key: Keys.component({ id: customId }),
+            key: Keys.component({ namespace: 'mentionable-select', id: customId }),
             kind: REGISTRY_KINDS.MENTIONABLE_SELECT,
             metadata: metadata,
             handlerClass: target

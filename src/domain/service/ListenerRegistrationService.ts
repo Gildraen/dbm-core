@@ -156,6 +156,14 @@ export class ListenerRegistrationService {
                 if (typeof customId !== 'string') {
                     throw new Error('customId must be a string');
                 }
+                const namespace = this.componentNamespaceFromType(interaction.componentType ?? interaction.state?.componentType);
+                if (namespace) {
+                    const namespacedKey = Keys.component({ namespace, id: customId });
+                    // Backward-compatibility: fall back to legacy key when only old registrations exist.
+                    return this.registry.has(namespacedKey)
+                        ? namespacedKey
+                        : Keys.component({ id: customId });
+                }
                 return Keys.component({ id: customId });
 
             case 'autocomplete':
@@ -245,6 +253,21 @@ export class ListenerRegistrationService {
 
     private formatErrorMessage(error: unknown): string {
         return error instanceof Error ? error.message : String(error);
+    }
+
+    private componentNamespaceFromType(componentType?: string): string | undefined {
+        switch (componentType) {
+            case 'string-select':
+            case 'user-select':
+            case 'role-select':
+            case 'channel-select':
+            case 'mentionable-select':
+            case 'button':
+            case 'modal':
+                return componentType;
+            default:
+                return undefined;
+        }
     }
 
     /**

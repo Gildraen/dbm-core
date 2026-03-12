@@ -21,7 +21,7 @@ export function RoleSelect(customId: string) {
 
         const registry = registryProvider.getRegistry();
         registry.upsert({
-            key: Keys.component({ id: customId }),
+            key: Keys.component({ namespace: 'role-select', id: customId }),
             kind: REGISTRY_KINDS.ROLE_SELECT,
             metadata: metadata,
             handlerClass: target

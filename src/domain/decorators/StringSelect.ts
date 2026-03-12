@@ -34,7 +34,7 @@ export function StringSelect(customId: string) {
 
         const registry = registryProvider.getRegistry();
         registry.upsert({
-            key: Keys.component({ id: customId }),
+            key: Keys.component({ namespace: 'string-select', id: customId }),
             kind: REGISTRY_KINDS.STRING_SELECT,
             metadata: metadata,
             handlerClass: target

@@ -19,7 +19,7 @@ export function ChannelSelect(customId: string) {
 
         const registry = registryProvider.getRegistry();
         registry.upsert({
-            key: Keys.component({ id: customId }),
+            key: Keys.component({ namespace: 'channel-select', id: customId }),
             kind: REGISTRY_KINDS.CHANNEL_SELECT,
             metadata: metadata,
             handlerClass: target

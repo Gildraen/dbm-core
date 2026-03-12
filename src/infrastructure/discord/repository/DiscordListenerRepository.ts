@@ -127,8 +127,12 @@ export class DiscordListenerRepository implements ListenerRepository {
 
         if (interaction.isButton() || interaction.isAnySelectMenu() || interaction.isModalSubmit()) {
             const componentType = interaction.isButton() ? 'button' :
-                interaction.isAnySelectMenu() ? 'select' :
-                    'modal';
+                interaction.isStringSelectMenu() ? 'string-select' :
+                    interaction.isUserSelectMenu() ? 'user-select' :
+                        interaction.isRoleSelectMenu() ? 'role-select' :
+                            interaction.isChannelSelectMenu() ? 'channel-select' :
+                                interaction.isMentionableSelectMenu() ? 'mentionable-select' :
+                                    'modal';
             const values = 'values' in interaction ? interaction.values : undefined;
 
             return {
