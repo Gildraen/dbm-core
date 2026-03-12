@@ -278,7 +278,7 @@ describe("ListenerRegistrationService", () => {
             const { descriptor, handleSpy } = makeDescriptor(legacyKey, REGISTRY_KINDS.STRING_SELECT);
             const namespacedKey = Keys.component({ namespace: "string-select", id: "poll" });
             const hasMock = vi.fn().mockReturnValue(false); // namespaced key does NOT exist
-            const getMock = vi.fn((key: string) => (key === legacyKey ? descriptor : undefined));
+            const getMock = vi.fn((key: string) => (key === legacyKey ? descriptor : undefined)) as unknown as PlatformRegistryReaderInterface["get"];
             const registry = makeRegistry({ get: getMock, has: hasMock });
             const handler = await getHandler(registry);
 
@@ -322,7 +322,7 @@ describe("ListenerRegistrationService", () => {
         test("falls back to base command key for autocomplete when option key has no handler", async () => {
             const fallbackKey = Keys.autocomplete(Keys.slash("search"));
             const { descriptor, handleSpy } = makeDescriptor(fallbackKey, REGISTRY_KINDS.AUTOCOMPLETE);
-            const getMock = vi.fn((key: string) => (key === fallbackKey ? descriptor : undefined));
+            const getMock = vi.fn((key: string) => (key === fallbackKey ? descriptor : undefined)) as unknown as PlatformRegistryReaderInterface["get"];
             const registry = makeRegistry({ get: getMock });
             const handler = await getHandler(registry);
 

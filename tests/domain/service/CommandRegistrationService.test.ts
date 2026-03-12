@@ -39,11 +39,16 @@ function makeRepository(registeredCount?: number): CommandRepository {
 function makeRegistry(
     kindMap: Partial<Record<string, DescriptorInterface[]>> = {}
 ): PlatformRegistryReaderInterface {
+    const list = vi.fn((kind?: string) => kindMap[kind ?? ""] ?? []) as unknown as PlatformRegistryReaderInterface["list"];
+    const get = vi.fn().mockReturnValue(undefined) as unknown as PlatformRegistryReaderInterface["get"];
+    const has = vi.fn().mockReturnValue(false) as unknown as PlatformRegistryReaderInterface["has"];
+    const size = vi.fn().mockReturnValue(0) as unknown as PlatformRegistryReaderInterface["size"];
+
     return {
-        list: vi.fn((kind?: string) => kindMap[kind ?? ""] ?? []),
-        get: vi.fn().mockReturnValue(undefined),
-        has: vi.fn().mockReturnValue(false),
-        size: vi.fn().mockReturnValue(0),
+        list,
+        get,
+        has,
+        size,
     };
 }
 
