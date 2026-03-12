@@ -298,7 +298,7 @@ import type { ModuleInterface } from "@gildraen/dbm-core";
 import { SlashCommand, Event } from "@gildraen/dbm-core";
 
 // Public API focuses on module authoring primitives
-// (ModuleInterface, Keys, and decorators).
+// (ModuleInterface and decorators).
 ```
 
 ## 🧪 Development

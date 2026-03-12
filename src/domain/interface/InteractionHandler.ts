@@ -9,7 +9,7 @@ export type { Interaction };
  * Interaction handler interface for handling platform interactions
  */
 export interface InteractionHandler {
-    handle(interaction: Interaction): Promise<undefined>;
+    handle(interaction: Interaction): Promise<void>;
 }
 
 /**
