@@ -225,11 +225,11 @@ graph TB
 
         Base[PlatformCommand<br/>Union Type]
 
-        Slash["PlatformSlashCommand<br/>type: SLASH<br/>name: string<br/>description: string<br/>options: CommandOption array"]
+        Slash["PlatformSlashCommand<br/>type: \"slash\"<br/>name: string<br/>description: string<br/>options: CommandOption array"]
 
-        UserCtx[PlatformUserContextCommand<br/>type: 'USER_CONTEXT'<br/>name: string]
+        UserCtx["PlatformUserContextCommand<br/>type: \"context:user\"<br/>name: string"]
 
-        MsgCtx[PlatformMessageContextCommand<br/>type: 'MESSAGE_CONTEXT'<br/>name: string]
+        MsgCtx["PlatformMessageContextCommand<br/>type: \"context:message\"<br/>name: string"]
 
         Base --> Slash
         Base --> UserCtx

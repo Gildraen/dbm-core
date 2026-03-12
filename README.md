@@ -28,7 +28,7 @@ import { SlashCommand, Event } from "@gildraen/dbm-core";
 export class PingCommand {
   name = "PingCommand";
 
-  async handle(interaction: any): Promise<void> {
+  async handle(interaction: { reply: (content: string) => Promise<unknown> }): Promise<void> {
     await interaction.reply("Pong!");
   }
 
@@ -50,7 +50,7 @@ export class ReadyHandler {
   }
 }
 
-export default {
+export const exampleModule = {
   name: "example-module",
   async discoverCommands() {
     await import("./commands/PingCommand.js");
@@ -59,6 +59,8 @@ export default {
     await import("./listeners/ReadyHandler.js");
   },
 } satisfies ModuleInterface;
+
+export default exampleModule;
 ```
 
 **Deploy with CLI commands:**
