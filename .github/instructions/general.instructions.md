@@ -47,10 +47,12 @@ This is a strict project standard that must be followed in all contexts.
 **CRITICAL**: Only export what external module developers truly need in `src/index.ts`
 
 ### ✅ **What TO Export (Module Developer Essentials)**
+
 - **ModuleInterface**: Core interface that modules must implement
-- **Decorators**: All decorators for annotating handlers (`@SlashCommand`, `@EventListener`, etc.)
+- **Decorators**: All decorators for annotating handlers (`@SlashCommand`, `@Event`, etc.)
 
 ### ❌ **What NOT TO Export (Internal Implementation)**
+
 - **Use Cases**: Application orchestration classes (`StartMigration`, `RegisterCommands`, `RegisterListeners`)
 - **Repository Interfaces**: Internal abstractions (`CommandRepository`, `ListenerRepository`)
 - **Infrastructure Implementations**: Concrete implementations (`DiscordCommandRepository`, `DiscordListenerRepository`)
@@ -59,6 +61,7 @@ This is a strict project standard that must be followed in all contexts.
 - **Type Definitions**: Internal type definitions
 
 ### 📝 **Rationale**
+
 - **Module-focused API**: External developers only build modules, not orchestrate the core system
 - **Minimal surface area**: Reduces complexity and maintenance burden
 - **Clear purpose**: Library is for creating modules, not for building alternative core systems

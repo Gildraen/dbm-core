@@ -1,6 +1,6 @@
 {
     "name": "Node.js Discord Bot Development",
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu24.04",
     "features": {
         "ghcr.io/devcontainers/features/node:1": {}
     },
@@ -21,6 +21,13 @@
                 "editor.formatOnSave": true,
                 "editor.codeActionsOnSave": {
                     "source.fixAll.eslint": "explicit"
+                },
+                "chat.tools.terminal.autoApprove": {
+                    "find": true,
+                    "grep": true,
+                    "tree": true,
+                    "ls": true,
+                    "cd": true
                 }
             }
         }

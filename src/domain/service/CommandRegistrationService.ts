@@ -1,106 +1,67 @@
-import { getAllSlashCommands } from "app/infrastructure/registry/DiscordRegistry.js";
-import { getAllUserContextMenus } from "app/infrastructure/decorator/UserContextMenu.js";
-import { getAllMessageContextMenus } from "app/infrastructure/decorator/MessageContextMenu.js";
-import type { CommandRepository } from "app/domain/interface/CommandRepository.js";
+import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
+import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
+import { REGISTRY_KINDS, type CommandKind } from "app/domain/interface/registry/types.js";
+import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
+import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
 
 /**
  * Domain service for command registration business logic
- * Contains the core logic for discovering and registering Discord commands
  */
 export class CommandRegistrationService {
     private readonly commandRepository: CommandRepository;
+    private readonly registry: PlatformRegistryReaderInterface;
 
-    constructor(commandRepository: CommandRepository) {
+    constructor(
+        commandRepository: CommandRepository,
+        registry: PlatformRegistryReaderInterface
+    ) {
         this.commandRepository = commandRepository;
+        this.registry = registry;
     }
 
     /**
-     * Register all discovered commands with Discord
-     * Returns the number of commands registered
+     * Register all discovered commands with the platform
      */
     async registerDiscoveredCommands(): Promise<number> {
         const commands = this.buildCommandsFromRegistry();
 
         if (commands.length === 0) {
-            console.log("ℹ️  No commands discovered for Discord registration");
+            console.log("ℹ️  No commands discovered for registration");
             return 0;
         }
 
-        // Register with Discord
         const registeredCount = await this.commandRepository.registerCommands(commands);
 
-        this.logRegistrationSummary(registeredCount, commands.length);
+        console.log(registeredCount === commands.length
+            ? `✅ Successfully registered all ${registeredCount} commands`
+            : `⚠️  Registered ${registeredCount}/${commands.length} commands`
+        );
 
         return registeredCount;
     }
 
     /**
-     * Get summary of discovered commands without registering them
-     * Used for dry-run scenarios
+     * Build platform command payloads from registry descriptors
      */
-    getDiscoveredCommandsSummary(): { total: number; slashCommands: number; userContextMenus: number; messageContextMenus: number } {
-        const slashCommands = getAllSlashCommands();
-        const userContextMenus = getAllUserContextMenus();
-        const messageContextMenus = getAllMessageContextMenus();
+    private buildCommandsFromRegistry(): PlatformCommand[] {
+        const commandKinds: CommandKind[] = [
+            REGISTRY_KINDS.SLASH,
+            REGISTRY_KINDS.CONTEXT_USER,
+            REGISTRY_KINDS.CONTEXT_MESSAGE
+        ];
 
-        return {
-            total: slashCommands.size + userContextMenus.size + messageContextMenus.size,
-            slashCommands: slashCommands.size,
-            userContextMenus: userContextMenus.size,
-            messageContextMenus: messageContextMenus.size
-        };
+        return commandKinds.flatMap(kind =>
+            this.registry.list(kind).map(descriptor => this.buildCommand(descriptor))
+        );
     }
 
     /**
-     * Log dry-run summary without actually registering commands
+     * Build a platform command from descriptor
      */
-    logDryRunSummary(): void {
-        const summary = this.getDiscoveredCommandsSummary();
+    private buildCommand(descriptor: DescriptorInterface<CommandKind>): PlatformCommand {
+        const HandlerClass = descriptor.handlerClass;
+        const handler = new HandlerClass();
 
-        console.log(`🔍 [DRY RUN] Would register ${summary.total} discovered commands with Discord:`);
-        console.log(`   - Slash commands: ${summary.slashCommands}`);
-        console.log(`   - User context menus: ${summary.userContextMenus}`);
-        console.log(`   - Message context menus: ${summary.messageContextMenus}`);
-    }
-
-    private buildCommandsFromRegistry(): any[] {
-        const commands = [];
-
-        // Build slash commands
-        const slashCommands = getAllSlashCommands();
-        for (const [, CommandClass] of slashCommands) {
-            const instance = new CommandClass();
-            const builder = instance.buildCommand();
-            commands.push(builder.toJSON());
-        }
-
-        // Build user context menus
-        const userContextMenus = getAllUserContextMenus();
-        for (const [, CommandClass] of userContextMenus) {
-            const instance = new CommandClass();
-            const builder = instance.buildCommand();
-            commands.push(builder.toJSON());
-        }
-
-        // Build message context menus
-        const messageContextMenus = getAllMessageContextMenus();
-        for (const [, CommandClass] of messageContextMenus) {
-            const instance = new CommandClass();
-            const builder = instance.buildCommand();
-            commands.push(builder.toJSON());
-        }
-
-        return commands;
-    }
-
-    private logRegistrationSummary(registeredCount: number, totalCommands: number): void {
-        const summary = this.getDiscoveredCommandsSummary();
-
-        console.log(`✅ Successfully registered ${registeredCount} discovered commands with Discord`);
-        console.log(`🎯 Registration Summary:`);
-        console.log(`   - Slash commands: ${summary.slashCommands}`);
-        console.log(`   - User context menus: ${summary.userContextMenus}`);
-        console.log(`   - Message context menus: ${summary.messageContextMenus}`);
-        console.log(`   - Total: ${totalCommands}`);
+        return handler.buildCommand();
     }
 }

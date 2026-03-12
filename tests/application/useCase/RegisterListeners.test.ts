@@ -1,164 +1,116 @@
-import { describe, test, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
-import { RegisterListeners } from "app/application/useCase/RegisterListeners.js";
-import { config } from "app/domain/config/Config.js";
-import { loadModule } from "app/domain/service/ModuleLoader.js";
-import type { ListenerRepository } from "app/domain/interface/ListenerRepository.js";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
+import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
 
-vi.mock("app/domain/config/Config.js", () => {
+const mocks = vi.hoisted(() => {
+    const getEnabledModules = vi.fn();
+    const loadModule = vi.fn();
+    const registerDiscoveredListeners = vi.fn();
+    const ListenerRegistrationService = vi.fn().mockImplementation(() => ({
+        registerDiscoveredListeners,
+    }));
+
     return {
-        config: {
-            getEnabledModules: vi.fn(),
-        },
+        getEnabledModules,
+        loadModule,
+        registerDiscoveredListeners,
+        ListenerRegistrationService,
     };
 });
 
-vi.mock("app/domain/service/ModuleLoader.js", () => ({
-    loadModule: vi.fn(),
+vi.mock("app/domain/config/Config.js", () => ({
+    config: {
+        getEnabledModules: mocks.getEnabledModules,
+    },
 }));
 
+vi.mock("app/domain/service/ModuleLoader.js", () => ({
+    loadModule: mocks.loadModule,
+}));
+
+vi.mock("app/domain/service/ListenerRegistrationService.js", () => ({
+    ListenerRegistrationService: mocks.ListenerRegistrationService,
+}));
+
+import { RegisterListeners } from "app/application/useCase/RegisterListeners.js";
+
 describe("RegisterListeners", () => {
-    let mockListenerRepository: ListenerRepository;
-    let consoleSpy: ReturnType<typeof vi.spyOn>;
-    let registerListeners: RegisterListeners;
-
     beforeEach(() => {
-        vi.resetAllMocks();
-        consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
-        mockListenerRepository = {
-            registerEventHandlerClass: vi.fn().mockResolvedValue(undefined),
-            registerEventListener: vi.fn(),
-            registerInteractionListener: vi.fn(),
-            getListenerSummary: vi.fn().mockReturnValue({ eventListeners: 0, interactionListeners: 0, total: 0 }),
-        };
-        registerListeners = new RegisterListeners(mockListenerRepository);
+        vi.clearAllMocks();
     });
 
-    afterEach(() => {
-        consoleSpy.mockRestore();
-    });
+    test("discovers listeners from enabled modules and registers them", async () => {
+        const moduleA = { discoverListeners: vi.fn().mockResolvedValue(undefined) };
+        const moduleB = { discoverListeners: vi.fn().mockResolvedValue(undefined) };
 
-    test("should successfully discover listeners for modules that have discoverListeners method", async () => {
-        const mockModule = {
-            name: "test-module",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "test-module", config: { enabled: true, settings: {} } }
+        mocks.getEnabledModules.mockReturnValue([
+            { name: "module-a", config: { enabled: true, settings: {} } },
+            { name: "module-b", config: { enabled: true, settings: {} } },
         ]);
-        (loadModule as Mock).mockResolvedValue(mockModule);
+        mocks.loadModule
+            .mockResolvedValueOnce(moduleA)
+            .mockResolvedValueOnce(moduleB);
+        mocks.registerDiscoveredListeners.mockReturnValue(3);
 
-        await registerListeners.execute();
+        const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        expect(mockModule.discoverListeners).toHaveBeenCalledWith();
-        expect(consoleSpy).not.toHaveBeenCalled();
+        const listenerRepository = {} as ListenerRepository;
+        const registry = {} as PlatformRegistryReaderInterface;
+        const useCase = new RegisterListeners(listenerRepository, registry);
+
+        await useCase.execute();
+
+        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository, registry);
+        expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
+        expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
+        expect(moduleA.discoverListeners).toHaveBeenCalledTimes(1);
+        expect(moduleB.discoverListeners).toHaveBeenCalledTimes(1);
+        expect(mocks.registerDiscoveredListeners).toHaveBeenCalledTimes(1);
+        expect(logSpy).toHaveBeenCalledWith("✅ Successfully registered 3 listeners");
+        expect(errorSpy).not.toHaveBeenCalled();
     });
 
-    test("should successfully discover listeners for modules without discoverListeners method", async () => {
-        const mockModule = {
-            name: "test-module"
-        };
+    test("continues registration when one module fails discovery", async () => {
+        const moduleB = { discoverListeners: vi.fn().mockResolvedValue(undefined) };
 
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "test-module", config: { enabled: true, settings: {} } }
-        ]);
-        (loadModule as Mock).mockResolvedValue(mockModule);
-
-        await registerListeners.execute();
-
-        expect(consoleSpy).not.toHaveBeenCalled();
-    });
-
-    test("should handle errors during module loading", async () => {
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "broken-module", config: { enabled: true, settings: {} } }
-        ]);
-        (loadModule as Mock).mockRejectedValue(new Error("Module load error"));
-
-        await registerListeners.execute();
-
-        expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to discover listeners for module "broken-module": Module load error')
-        );
-    });
-
-    test("should handle multiple modules", async () => {
-        const mockModule1 = {
-            name: "module1",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
-
-        const mockModule2 = {
-            name: "module2",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "module1", config: { enabled: true, settings: {} } },
-            { name: "module2", config: { enabled: true, settings: {} } }
-        ]);
-        (loadModule as Mock)
-            .mockResolvedValueOnce(mockModule1)
-            .mockResolvedValueOnce(mockModule2);
-
-        await registerListeners.execute();
-
-        expect(mockModule1.discoverListeners).toHaveBeenCalledWith();
-        expect(mockModule2.discoverListeners).toHaveBeenCalledWith();
-        expect(consoleSpy).not.toHaveBeenCalled();
-    });
-
-    test("should handle no enabled modules", async () => {
-        (config.getEnabledModules as Mock).mockReturnValue([]);
-
-        await registerListeners.execute();
-
-        expect(loadModule).not.toHaveBeenCalled();
-        expect(consoleSpy).not.toHaveBeenCalled();
-    });
-
-    test("should handle mixed success and failure scenarios", async () => {
-        const mockModule = {
-            name: "good-module",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
+        mocks.getEnabledModules.mockReturnValue([
             { name: "broken-module", config: { enabled: true, settings: {} } },
-            { name: "good-module", config: { enabled: true, settings: {} } }
+            { name: "healthy-module", config: { enabled: true, settings: {} } },
         ]);
-        (loadModule as Mock)
-            .mockRejectedValueOnce(new Error("Load failed"))
-            .mockResolvedValueOnce(mockModule);
+        mocks.loadModule
+            .mockRejectedValueOnce(new Error("Cannot import module"))
+            .mockResolvedValueOnce(moduleB);
+        mocks.registerDiscoveredListeners.mockReturnValue(1);
 
-        await registerListeners.execute();
+        const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        expect(mockModule.discoverListeners).toHaveBeenCalledWith();
-        expect(consoleSpy).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to discover listeners for module "broken-module": Load failed')
+        const useCase = new RegisterListeners({} as ListenerRepository, {} as PlatformRegistryReaderInterface);
+        await useCase.execute();
+
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining("Failed to discover listeners for module \"broken-module\": Cannot import module")
         );
+        expect(moduleB.discoverListeners).toHaveBeenCalledTimes(1);
+        expect(mocks.registerDiscoveredListeners).toHaveBeenCalledTimes(1);
+        expect(logSpy).toHaveBeenCalledWith("✅ Successfully registered 1 listeners");
     });
 
-    test("should handle success for one module and failure for another", async () => {
-        const mockSuccessModule = {
-            name: "success-module",
-            discoverListeners: vi.fn().mockResolvedValue(undefined)
-        };
+    test("logs registration failure when listener registration throws", async () => {
+        mocks.getEnabledModules.mockReturnValue([]);
+        mocks.registerDiscoveredListeners.mockImplementation(() => {
+            throw new Error("Registry unavailable");
+        });
 
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "success-module", config: { enabled: true, settings: {} } },
-            { name: "fail-module", config: { enabled: true, settings: {} } }
-        ]);
-        (loadModule as Mock)
-            .mockResolvedValueOnce(mockSuccessModule)
-            .mockRejectedValueOnce(new Error("Failed to load"));
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        await registerListeners.execute();
+        const useCase = new RegisterListeners({} as ListenerRepository, {} as PlatformRegistryReaderInterface);
+        await useCase.execute();
 
-        expect(mockSuccessModule.discoverListeners).toHaveBeenCalledWith();
-        expect(consoleSpy).toHaveBeenCalledWith(
-            '❌ Failed to discover listeners for module "fail-module": Failed to load'
+        expect(mocks.registerDiscoveredListeners).toHaveBeenCalledTimes(1);
+        expect(errorSpy).toHaveBeenCalledWith(
+            "❌ Failed to register listeners with Discord: Registry unavailable"
         );
     });
 });

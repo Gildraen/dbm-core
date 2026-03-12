@@ -3,7 +3,7 @@
 ## 🎯 Features
 
 - **Module Orchestration**: Coordinate independent module packages
-- **CLI-First Deployment**: Separate migration, command registration, and runtime phases
+- **CLI-First Deployment**: Separate command registration and runtime phases
 - **TypeScript & Clean Architecture**: Domain-driven design with strict typing
 - **Discord.js Integration**: Built-in support for Discord.js v14+
 
@@ -17,49 +17,147 @@ yarn add @gildraen/dbm-core discord.js
 
 ## 🚀 Quick Start
 
-Create a Discord bot with modular architecture:
+Create a module package using the public decorator API:
 
 ```typescript
-// bot/src/BotApplication.ts
-import { Client, GatewayIntentBits } from "discord.js";
-import {
-  RegisterListeners,
-  DiscordListenerRepository,
-} from "@gildraen/dbm-core";
+// @myorg/example-module/src/index.ts
+import type { ModuleInterface } from "@gildraen/dbm-core";
+import { SlashCommand, Event } from "@gildraen/dbm-core";
 
-export class BotApplication {
-  private readonly client: Client;
-  private readonly registerListeners: RegisterListeners;
+@SlashCommand("ping", "Replies with pong")
+export class PingCommand {
+  name = "PingCommand";
 
-  constructor() {
-    this.client = new Client({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
-    });
-    const listenerRepository = new DiscordListenerRepository(this.client);
-    this.registerListeners = new RegisterListeners(listenerRepository);
+  async handle(interaction: { reply: (content: string) => Promise<unknown> }): Promise<void> {
+    await interaction.reply("Pong!");
   }
 
-  async start(): Promise<void> {
-    this.client.on("ready", async () => {
-      console.log(`🤖 ${this.client.user?.tag} is ready!`);
-
-      // Set up all module handlers
-      const report = await this.registerListeners.execute();
-      console.log(`✅ ${report.successCount} modules loaded`);
-    });
-
-    await this.client.login(process.env.DISCORD_TOKEN);
+  buildCommand() {
+    return {
+      type: "slash" as const,
+      name: "ping",
+      description: "Replies with pong",
+    };
   }
 }
+
+@Event("ready")
+export class ReadyHandler {
+  name = "ReadyHandler";
+
+  async handle(client: { id: string; name: string }): Promise<void> {
+    console.log(`Bot ${client.name} (${client.id}) is ready`);
+  }
+}
+
+export const exampleModule = {
+  name: "example-module",
+  async discoverCommands() {
+    await import("./commands/PingCommand.js");
+  },
+  async discoverListeners() {
+    await import("./listeners/ReadyHandler.js");
+  },
+} satisfies ModuleInterface;
+
+export default exampleModule;
 ```
 
 **Deploy with CLI commands:**
 
 ```bash
-yarn dbm-migrate              # Run database migrations
 yarn dbm-register-commands    # Register Discord commands
 yarn start                    # Start the bot
 ```
+
+## Complete Example Module
+
+Want to see the complete workflow in action? Check out the workflow guide:
+
+**[→ Workflow Overview](./docs/workflows/README.md)**
+
+The workflow documentation demonstrates:
+
+- ✅ Slash commands (`/ping`, `/greet`, `/math`)
+- ✅ Event listeners (message logging, welcome messages)
+- ✅ Autocomplete for command options
+- ✅ Interactive components (role selector)
+- ✅ Context menu commands (user info, message quote)
+- ✅ Proper module structure with discovery functions
+
+## CLI Usage
+
+### Prerequisites
+
+1. **Create configuration file**: Copy `.dbmrc.example.json` to `.dbmrc.json` and configure your modules
+2. **Set Discord token**: Export your Discord bot token as an environment variable
+
+```bash
+# Copy example configuration
+cp .dbmrc.example.json .dbmrc.json
+
+# Edit configuration to enable your modules
+# (See Configuration section below)
+
+# Set your Discord bot token
+export DISCORD_TOKEN="your-bot-token-here"
+```
+
+### Register Commands
+
+The `register-commands` CLI automatically:
+
+- Loads configuration from `.dbmrc.json`
+- Initializes the registry system
+- Discovers all enabled modules
+- Registers slash commands with Discord API
+
+```bash
+# Register all commands from enabled modules
+yarn dbm-register-commands
+
+# Save registration report to file
+yarn dbm-register-commands --output report.json
+
+# Show help
+yarn dbm-register-commands --help
+```
+
+**Important**: The registry is automatically initialized by the CLI. No manual setup required.
+
+### Configuration
+
+The `.dbmrc.json` file controls which modules are loaded:
+
+```json
+{
+  "core": {
+    "registry": {
+      "type": "in-memory"
+    }
+  },
+  "modules": {
+    "@myorg/economy-module": {
+      "enabled": true,
+      "settings": {
+        "dailyReward": 100,
+        "currency": "coins"
+      }
+    },
+    "@myorg/moderation-module": {
+      "enabled": false,
+      "settings": {}
+    }
+  }
+}
+```
+
+**Configuration Structure:**
+
+- `core.registry.type`: Registry implementation (`"in-memory"` or `"discord"`)
+- `modules`: Object mapping module names to their configuration
+- `modules[name].enabled`: Whether to load this module (`true`/`false`)
+- `modules[name].settings`: Module-specific settings (varies per module)
 
 ## 🔧 Module Development
 
@@ -126,33 +224,33 @@ export class BalanceCommand implements SlashCommand {
 
 ### Event Listeners
 
-Get the Discord client as the first parameter, with properly typed event arguments:
+Event handlers receive platform-agnostic event arguments from `PlatformEvents`:
 
 ```typescript
-@EventListener("ready")
-export class ReadyHandler implements EventListener<"ready"> {
+@Event("ready")
+export class ReadyHandler implements EventHandler {
   async handle(client: Client): Promise<void> {
-    console.log(`Bot ${client.user?.tag} is ready!`);
+    console.log(`Bot ${client.name} (${client.id}) is ready!`);
   }
 }
 
-@EventListener("messageCreate")
-export class MessageHandler implements EventListener<"messageCreate"> {
-  async handle(client: Client, message: Message): Promise<void> {
-    // Both client and message are properly typed
-    if (message.content === "!ping") {
-      await message.reply("Pong!");
+@Event("messageCreate")
+export class MessageHandler implements EventHandler {
+  async handle(message: PlatformTextMessage): Promise<void> {
+    if (message.content.content === "!ping") {
+      await message.reply({ content: "Pong!" });
     }
   }
 }
 
-@EventListener("guildMemberAdd")
-export class WelcomeHandler implements EventListener<"guildMemberAdd"> {
-  async handle(client: Client, member: GuildMember): Promise<void> {
-    // member is properly typed as GuildMember
+@Event("guildMemberAdd")
+export class WelcomeHandler implements EventHandler {
+  async handle(member: PlatformGuildMember): Promise<void> {
     const channel = member.guild.systemChannel;
     if (channel) {
-      await channel.send(`Welcome ${member.user.tag} to ${member.guild.name}!`);
+      await channel.send({
+        content: `Welcome ${member.user.tag} to ${member.guild.name}!`,
+      });
     }
   }
 }
@@ -198,24 +296,11 @@ type OperationReport = {
 ### Use Cases
 
 ```typescript
-import {
-  StartMigration,
-  RegisterCommands,
-  RegisterListeners,
-} from "@gildraen/dbm-core";
-import { Client, GatewayIntentBits } from "discord.js";
+import type { ModuleInterface } from "@gildraen/dbm-core";
+import { SlashCommand, Event } from "@gildraen/dbm-core";
 
-// Create Discord client
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
-
-// Programmatic usage
-const migrationService = new StartMigration(repository);
-const migrationReport = await migrationService.execute();
-
-const commandService = new RegisterCommands(client);
-const commandReport = await commandService.execute();
+// Public API focuses on module authoring primitives
+// (ModuleInterface and decorators).
 ```
 
 ## 🧪 Development

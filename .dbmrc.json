@@ -1,8 +1,15 @@
 {
-  "example-module": {
-    "enabled": false,
-    "settings": {
-      "description": "Example module - disabled by default"
+  "core": {
+    "registry": {
+      "type": "in-memory"
+    }
+  },
+  "modules": {
+    "example-module": {
+      "enabled": false,
+      "settings": {
+        "description": "Example module - disabled by default"
+      }
     }
   }
 }

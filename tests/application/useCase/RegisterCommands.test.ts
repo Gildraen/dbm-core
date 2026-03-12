@@ -1,179 +1,110 @@
-import { describe, test, expect, vi, beforeEach, type Mock } from "vitest";
-import { RegisterCommands } from "app/application/useCase/RegisterCommands.js";
-import { config } from "app/domain/config/Config.js";
-import { loadModule } from "app/domain/service/ModuleLoader.js";
-import type { CommandRepository } from "app/domain/interface/CommandRepository.js";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
+import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
 
-vi.mock("app/domain/service/ModuleLoader.js", () => ({
-    loadModule: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+    const getEnabledModules = vi.fn();
+    const loadModule = vi.fn();
+    const registerDiscoveredCommands = vi.fn();
+    const CommandRegistrationService = vi.fn().mockImplementation(() => ({
+        registerDiscoveredCommands,
+    }));
 
-vi.mock("app/domain/config/Config.js", () => {
     return {
-        config: {
-            getEnabledModules: vi.fn(),
-        },
+        getEnabledModules,
+        loadModule,
+        registerDiscoveredCommands,
+        CommandRegistrationService,
     };
 });
 
-// Mock the CommandRegistrationService
-vi.mock("app/domain/service/CommandRegistrationService.js", () => ({
-    CommandRegistrationService: vi.fn().mockImplementation(() => ({
-        registerDiscoveredCommands: vi.fn().mockResolvedValue(2),
-    })),
+vi.mock("app/domain/config/Config.js", () => ({
+    config: {
+        getEnabledModules: mocks.getEnabledModules,
+    },
 }));
 
+vi.mock("app/domain/service/ModuleLoader.js", () => ({
+    loadModule: mocks.loadModule,
+}));
+
+vi.mock("app/domain/service/CommandRegistrationService.js", () => ({
+    CommandRegistrationService: mocks.CommandRegistrationService,
+}));
+
+import { RegisterCommands } from "app/application/useCase/RegisterCommands.js";
+
 describe("RegisterCommands", () => {
-    let mockCommandRepository: CommandRepository;
-    let consoleSpy: { log: Mock; error: Mock };
-
     beforeEach(() => {
-        vi.resetAllMocks();
-
-        // Create mock console
-        consoleSpy = {
-            log: vi.fn(),
-            error: vi.fn(),
-        };
-        vi.stubGlobal('console', consoleSpy);
-
-        // Create a mock command repository
-        mockCommandRepository = {
-            registerCommands: vi.fn().mockResolvedValue(1),
-            clearAllCommands: vi.fn().mockResolvedValue(0),
-            getRegisteredCommands: vi.fn().mockResolvedValue([]),
-        };
+        vi.clearAllMocks();
     });
 
-    test("calls discoverCommands() on modules that have it", async () => {
-        const mockDiscoverCommands = vi.fn().mockResolvedValue(undefined);
-        const mockModule = {
-            name: "test-module",
-            migrate: vi.fn(),
-            discoverCommands: mockDiscoverCommands
-        };
+    test("discovers commands from enabled modules and registers them", async () => {
+        const moduleA = { discoverCommands: vi.fn().mockResolvedValue(undefined) };
+        const moduleB = { discoverCommands: vi.fn().mockResolvedValue(undefined) };
 
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "test-module", config: { enabled: true, settings: {} } },
+        mocks.getEnabledModules.mockReturnValue([
+            { name: "module-a", config: { enabled: true, settings: {} } },
+            { name: "module-b", config: { enabled: true, settings: {} } },
         ]);
+        mocks.loadModule
+            .mockResolvedValueOnce(moduleA)
+            .mockResolvedValueOnce(moduleB);
+        mocks.registerDiscoveredCommands.mockResolvedValue(undefined);
 
-        (loadModule as Mock).mockResolvedValue(mockModule);
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        const registration = new RegisterCommands(mockCommandRepository);
-        await registration.execute();
+        const commandRepository = {} as CommandRepository;
+        const registry = {} as PlatformRegistryReaderInterface;
+        const useCase = new RegisterCommands(commandRepository, registry);
 
-        expect(mockDiscoverCommands).toHaveBeenCalledWith();
+        await useCase.execute();
+
+        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository, registry);
+        expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
+        expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
+        expect(moduleA.discoverCommands).toHaveBeenCalledTimes(1);
+        expect(moduleB.discoverCommands).toHaveBeenCalledTimes(1);
+        expect(mocks.registerDiscoveredCommands).toHaveBeenCalledTimes(1);
+        expect(errorSpy).not.toHaveBeenCalled();
     });
 
-    test("logs error when module discovery fails", async () => {
-        (config.getEnabledModules as Mock).mockReturnValue([
+    test("continues registration when one module fails command discovery", async () => {
+        const moduleB = { discoverCommands: vi.fn().mockResolvedValue(undefined) };
+
+        mocks.getEnabledModules.mockReturnValue([
             { name: "broken-module", config: { enabled: true, settings: {} } },
+            { name: "healthy-module", config: { enabled: true, settings: {} } },
         ]);
+        mocks.loadModule
+            .mockRejectedValueOnce(new Error("Cannot import module"))
+            .mockResolvedValueOnce(moduleB);
+        mocks.registerDiscoveredCommands.mockResolvedValue(undefined);
 
-        (loadModule as Mock).mockRejectedValue(new Error("Module not found"));
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        const registration = new RegisterCommands(mockCommandRepository);
-        await registration.execute();
+        const useCase = new RegisterCommands({} as CommandRepository, {} as PlatformRegistryReaderInterface);
+        await useCase.execute();
 
-        expect(consoleSpy.error).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to discover commands for module "broken-module": Module not found')
+        expect(errorSpy).toHaveBeenCalledWith(
+            expect.stringContaining("Failed to discover commands for module \"broken-module\": Cannot import module")
         );
+        expect(moduleB.discoverCommands).toHaveBeenCalledTimes(1);
+        expect(mocks.registerDiscoveredCommands).toHaveBeenCalledTimes(1);
     });
 
-    test("logs error when command registration fails", async () => {
-        const { CommandRegistrationService } = await import("app/domain/service/CommandRegistrationService.js");
+    test("logs registration failure when command registration throws", async () => {
+        mocks.getEnabledModules.mockReturnValue([]);
+        mocks.registerDiscoveredCommands.mockRejectedValue(new Error("Discord API unavailable"));
 
-        // Create a mock instance that will fail
-        const mockService = new CommandRegistrationService(mockCommandRepository);
-        mockService.registerDiscoveredCommands = vi.fn().mockRejectedValue(new Error("Discord API error"));
+        const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        // Mock the constructor to return our failing mock
-        vi.mocked(CommandRegistrationService).mockImplementation(() => mockService);
+        const useCase = new RegisterCommands({} as CommandRepository, {} as PlatformRegistryReaderInterface);
+        await useCase.execute();
 
-        (config.getEnabledModules as Mock).mockReturnValue([]);
-
-        const registration = new RegisterCommands(mockCommandRepository);
-        await registration.execute();
-
-        expect(consoleSpy.error).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to register commands with Discord: Discord API error')
-        );
-    });
-
-    test("skips modules that don't have discoverCommands method", async () => {
-        const mockModule = {
-            name: "simple-module",
-            migrate: vi.fn(),
-            // No discoverCommands method
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "simple-module", config: { enabled: true, settings: {} } },
-        ]);
-
-        (loadModule as Mock).mockResolvedValue(mockModule);
-
-        const registration = new RegisterCommands(mockCommandRepository);
-        await registration.execute();
-
-        // Should not throw and should complete successfully
-        expect(loadModule).toHaveBeenCalledWith("simple-module");
-    });
-
-    test("processes multiple modules", async () => {
-        const mockModule1 = {
-            name: "module-1",
-            migrate: vi.fn(),
-            discoverCommands: vi.fn().mockResolvedValue(undefined)
-        };
-
-        const mockModule2 = {
-            name: "module-2",
-            migrate: vi.fn(),
-            discoverCommands: vi.fn().mockResolvedValue(undefined)
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "module-1", config: { enabled: true, settings: {} } },
-            { name: "module-2", config: { enabled: true, settings: {} } },
-        ]);
-
-        (loadModule as Mock)
-            .mockResolvedValueOnce(mockModule1)
-            .mockResolvedValueOnce(mockModule2);
-
-        const registration = new RegisterCommands(mockCommandRepository);
-        await registration.execute();
-
-        expect(mockModule1.discoverCommands).toHaveBeenCalledWith();
-        expect(mockModule2.discoverCommands).toHaveBeenCalledWith();
-    });
-
-    test("continues processing other modules when one module fails", async () => {
-        const mockModule = {
-            name: "good-module",
-            migrate: vi.fn(),
-            discoverCommands: vi.fn().mockResolvedValue(undefined)
-        };
-
-        (config.getEnabledModules as Mock).mockReturnValue([
-            { name: "broken-module", config: { enabled: true, settings: {} } },
-            { name: "good-module", config: { enabled: true, settings: {} } },
-        ]);
-
-        (loadModule as Mock)
-            .mockRejectedValueOnce(new Error("boom"))
-            .mockResolvedValueOnce(mockModule);
-
-        const registration = new RegisterCommands(mockCommandRepository);
-        await registration.execute();
-
-        // Should still process the good module
-        expect(mockModule.discoverCommands).toHaveBeenCalledWith();
-
-        // Should log error for broken module
-        expect(consoleSpy.error).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to discover commands for module "broken-module": boom')
+        expect(mocks.registerDiscoveredCommands).toHaveBeenCalledTimes(1);
+        expect(errorSpy).toHaveBeenCalledWith(
+            "❌ Failed to register commands with Discord: Discord API unavailable"
         );
     });
 });

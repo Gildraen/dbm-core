@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { ConfigSchema, type ConfigType, type ModuleConfigType } from "./ConfigSchema.js";
+import { ConfigSchema, type ConfigType, type ModuleConfigType, type CoreConfigType } from "./ConfigSchema.js";
 
 const CONFIG_PATH = path.resolve(process.cwd(), ".dbmrc.json");
 
@@ -37,11 +37,15 @@ export class ConfigManager {
         }
     }
 
+    public getCoreConfig(): CoreConfigType {
+        return this.config.core;
+    }
+
     public getModuleConfig(moduleName: string): ModuleConfigType {
-        if (!Object.hasOwn(this.config, moduleName)) {
+        if (!Object.hasOwn(this.config.modules, moduleName)) {
             throw new Error(`Module config for "${moduleName}" not found.`);
         }
-        return this.config[moduleName];
+        return this.config.modules[moduleName];
     }
 
     public getConfig(): ConfigType {
@@ -49,7 +53,7 @@ export class ConfigManager {
     }
 
     public getEnabledModules(): Array<{ name: string; config: ModuleConfigType }> {
-        return Object.entries(this.config)
+        return Object.entries(this.config.modules)
             .filter(([, cfg]) => cfg.enabled)
             .map(([name, cfg]) => ({ name, config: cfg }));
     }

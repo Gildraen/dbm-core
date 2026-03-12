@@ -119,7 +119,7 @@ const strictConfig: Linter.Config = {
         '@typescript-eslint/no-dynamic-delete': 'error',
         '@typescript-eslint/no-extraneous-class': 'error',
         '@typescript-eslint/no-invalid-void-type': ['error', {
-            allowInGenericTypeArguments: false,
+            allowInGenericTypeArguments: ['Promise'],
         }],
         '@typescript-eslint/no-meaningless-void-operator': ['error', {
             checkNever: true,
