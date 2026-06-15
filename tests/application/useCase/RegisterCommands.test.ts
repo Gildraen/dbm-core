@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
-import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 
 const mocks = vi.hoisted(() => {
     const getEnabledModules = vi.fn();
     const loadModule = vi.fn();
     const registerDiscoveredCommands = vi.fn();
+    const injectedRegistry = {};
     const CommandRegistrationService = vi.fn().mockImplementation(() => ({
         registerDiscoveredCommands,
     }));
@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
         getEnabledModules,
         loadModule,
         registerDiscoveredCommands,
+        injectedRegistry,
         CommandRegistrationService,
     };
 });
@@ -30,6 +31,10 @@ vi.mock("app/domain/service/ModuleLoader.js", () => ({
 
 vi.mock("app/domain/service/CommandRegistrationService.js", () => ({
     CommandRegistrationService: mocks.CommandRegistrationService,
+}));
+
+vi.mock("app/domain/registry/RegistryProvider.js", () => ({
+    registry: mocks.injectedRegistry,
 }));
 
 import { RegisterCommands } from "app/application/useCase/RegisterCommands.js";
@@ -55,12 +60,11 @@ describe("RegisterCommands", () => {
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
         const commandRepository = {} as CommandRepository;
-        const registry = {} as RegistryInterface;
         const useCase = new RegisterCommands(commandRepository);
 
         await useCase.execute();
 
-        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository, expect.any(Object));
+        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository, mocks.injectedRegistry);
         expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
         expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
         expect(moduleA.discoverCommands).toHaveBeenCalledTimes(1);
