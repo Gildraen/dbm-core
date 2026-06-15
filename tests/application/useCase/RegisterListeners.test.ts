@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
-import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 
 const mocks = vi.hoisted(() => {
     const getEnabledModules = vi.fn();
     const loadModule = vi.fn();
     const registerDiscoveredListeners = vi.fn();
+    const injectedRegistry = {};
     const ListenerRegistrationService = vi.fn().mockImplementation(() => ({
         registerDiscoveredListeners,
     }));
@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
         getEnabledModules,
         loadModule,
         registerDiscoveredListeners,
+        injectedRegistry,
         ListenerRegistrationService,
     };
 });
@@ -30,6 +31,10 @@ vi.mock("app/domain/service/ModuleLoader.js", () => ({
 
 vi.mock("app/domain/service/ListenerRegistrationService.js", () => ({
     ListenerRegistrationService: mocks.ListenerRegistrationService,
+}));
+
+vi.mock("app/domain/registry/RegistryProvider.js", () => ({
+    registry: mocks.injectedRegistry,
 }));
 
 import { RegisterListeners } from "app/application/useCase/RegisterListeners.js";
@@ -56,12 +61,11 @@ describe("RegisterListeners", () => {
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
         const listenerRepository = {} as ListenerRepository;
-        const registry = {} as RegistryInterface;
         const useCase = new RegisterListeners(listenerRepository);
 
         await useCase.execute();
 
-        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository, expect.any(Object));
+        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository, mocks.injectedRegistry);
         expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
         expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
         expect(moduleA.discoverListeners).toHaveBeenCalledTimes(1);
