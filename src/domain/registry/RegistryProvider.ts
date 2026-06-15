@@ -1,6 +1,6 @@
-import { Registry } from "app/infrastructure/Registry.js";
+import { DomainRegistry } from "./DomainRegistry.js";
 
 /**
  * Global registry singleton.
  */
-export const registry = new Registry();
+export const registry = new DomainRegistry();
