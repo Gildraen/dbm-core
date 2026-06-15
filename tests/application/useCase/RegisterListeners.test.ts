@@ -61,7 +61,7 @@ describe("RegisterListeners", () => {
 
         await useCase.execute();
 
-        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository);
+        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository, expect.any(Object));
         expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
         expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
         expect(moduleA.discoverListeners).toHaveBeenCalledTimes(1);

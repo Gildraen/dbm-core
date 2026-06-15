@@ -3,16 +3,18 @@ import type { CommandRepository } from "app/domain/interface/repository/CommandR
 import type { CommandHandlerInterface } from "app/domain/interface/handlers/HandlerInterface.js";
 import type { InteractionDescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
 import { isEventDescriptor } from "app/domain/interface/registry/DescriptorInterface.js";
-import { registry } from "app/domain/registry/RegistryProvider.js";
+import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 
 /**
  * Domain service for command registration business logic
  */
 export class CommandRegistrationService {
     private readonly commandRepository: CommandRepository;
+    private readonly registry: RegistryInterface;
 
-    constructor(commandRepository: CommandRepository) {
+    constructor(commandRepository: CommandRepository, registry: RegistryInterface) {
         this.commandRepository = commandRepository;
+        this.registry = registry;
     }
 
     /**
@@ -47,7 +49,7 @@ export class CommandRegistrationService {
         ];
 
         return commandKinds.flatMap(kind =>
-            registry.list(kind)
+            this.registry.list(kind)
                 .filter((d): d is InteractionDescriptorInterface => !isEventDescriptor(d))
                 .map(descriptor => {
                     const handler = new descriptor.handlerClass() as CommandHandlerInterface;

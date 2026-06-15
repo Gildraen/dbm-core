@@ -60,7 +60,7 @@ describe("RegisterCommands", () => {
 
         await useCase.execute();
 
-        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository);
+        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository, expect.any(Object));
         expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
         expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
         expect(moduleA.discoverCommands).toHaveBeenCalledTimes(1);
