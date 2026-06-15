@@ -4,7 +4,7 @@ import type { EventDescriptorInterface, InteractionDescriptorInterface } from "a
 import { isEventDescriptor } from "app/domain/interface/registry/DescriptorInterface.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
-import { registry } from "app/domain/registry/RegistryProvider.js";
+import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 
 /**
  * Domain service for listener setup business logic
@@ -12,9 +12,11 @@ import { registry } from "app/domain/registry/RegistryProvider.js";
 
 export class ListenerRegistrationService {
     private readonly listenerRepository: ListenerRepository;
+    private readonly registry: RegistryInterface;
 
-    constructor(listenerRepository: ListenerRepository) {
+    constructor(listenerRepository: ListenerRepository, registry: RegistryInterface) {
         this.listenerRepository = listenerRepository;
+        this.registry = registry;
     }
 
     /**
@@ -62,7 +64,7 @@ export class ListenerRegistrationService {
      * Register all event listeners discovered in registry
      */
     private registerEventListeners(failures: RegistrationFailure[]): number {
-        const eventDescriptors = registry.list(REGISTRY_KINDS.EVENT).filter(isEventDescriptor);
+        const eventDescriptors = this.registry.list(REGISTRY_KINDS.EVENT).filter(isEventDescriptor);
         let registeredEventListeners = 0;
 
         for (const descriptor of eventDescriptors) {
@@ -160,7 +162,7 @@ export class ListenerRegistrationService {
         key: string,
         interaction: Interaction
     ): InteractionDescriptorInterface | undefined {
-        const descriptor = registry.get(key);
+        const descriptor = this.registry.get(key);
         if (descriptor && !isEventDescriptor(descriptor)) {
             return descriptor;
         }
@@ -172,7 +174,7 @@ export class ListenerRegistrationService {
         }
 
         const fallbackKey = Keys.autocomplete(Keys.slash(interaction.commandName));
-        const fallback = registry.get(fallbackKey);
+        const fallback = this.registry.get(fallbackKey);
         return fallback && !isEventDescriptor(fallback) ? fallback : undefined;
     }
 
@@ -192,7 +194,7 @@ export class ListenerRegistrationService {
 
         const namespacedKey = Keys.component({ namespace, id: customId });
         // Backward-compatibility: fall back to legacy key when only old registrations exist.
-        return registry.has(namespacedKey)
+        return this.registry.has(namespacedKey)
             ? namespacedKey
             : Keys.component({ id: customId });
     }
@@ -244,8 +246,8 @@ export class ListenerRegistrationService {
         attachedEventListeners: number,
         failures: RegistrationFailure[]
     ): void {
-        const summary = registry.size();
-        const discoveredEventListeners = registry.size(REGISTRY_KINDS.EVENT);
+        const summary = this.registry.size();
+        const discoveredEventListeners = this.registry.size(REGISTRY_KINDS.EVENT);
         const discoveredInteractionHandlers = summary - discoveredEventListeners;
 
         console.log(`✅ Attached ${totalListeners} runtime listeners:`);
@@ -294,21 +296,21 @@ export class ListenerRegistrationService {
     } {
         // Sum all component kinds
         const componentCount =
-            registry.size(REGISTRY_KINDS.STRING_SELECT) +
-            registry.size(REGISTRY_KINDS.USER_SELECT) +
-            registry.size(REGISTRY_KINDS.ROLE_SELECT) +
-            registry.size(REGISTRY_KINDS.CHANNEL_SELECT) +
-            registry.size(REGISTRY_KINDS.MENTIONABLE_SELECT) +
-            registry.size(REGISTRY_KINDS.BUTTON) +
-            registry.size(REGISTRY_KINDS.MODAL);
+            this.registry.size(REGISTRY_KINDS.STRING_SELECT) +
+            this.registry.size(REGISTRY_KINDS.USER_SELECT) +
+            this.registry.size(REGISTRY_KINDS.ROLE_SELECT) +
+            this.registry.size(REGISTRY_KINDS.CHANNEL_SELECT) +
+            this.registry.size(REGISTRY_KINDS.MENTIONABLE_SELECT) +
+            this.registry.size(REGISTRY_KINDS.BUTTON) +
+            this.registry.size(REGISTRY_KINDS.MODAL);
 
         return {
-            events: registry.size(REGISTRY_KINDS.EVENT),
-            slashCommands: registry.size(REGISTRY_KINDS.SLASH),
-            contextMenus: registry.size(REGISTRY_KINDS.CONTEXT_USER) + registry.size(REGISTRY_KINDS.CONTEXT_MESSAGE),
+            events: this.registry.size(REGISTRY_KINDS.EVENT),
+            slashCommands: this.registry.size(REGISTRY_KINDS.SLASH),
+            contextMenus: this.registry.size(REGISTRY_KINDS.CONTEXT_USER) + this.registry.size(REGISTRY_KINDS.CONTEXT_MESSAGE),
             components: componentCount,
-            autocomplete: registry.size(REGISTRY_KINDS.AUTOCOMPLETE),
-            total: registry.size()
+            autocomplete: this.registry.size(REGISTRY_KINDS.AUTOCOMPLETE),
+            total: this.registry.size()
         };
     }
 }

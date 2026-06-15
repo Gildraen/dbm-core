@@ -2,12 +2,13 @@ import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
 import { CommandRegistrationService } from "app/domain/service/CommandRegistrationService.js";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 
 export class RegisterCommands {
     private readonly commandRegistrationService: CommandRegistrationService;
 
     public constructor(commandRepository: CommandRepository) {
-        this.commandRegistrationService = new CommandRegistrationService(commandRepository);
+        this.commandRegistrationService = new CommandRegistrationService(commandRepository, registry);
     }
 
     public async execute() {

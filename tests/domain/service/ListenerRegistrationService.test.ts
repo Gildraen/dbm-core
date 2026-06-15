@@ -5,11 +5,6 @@ import type { DescriptorInterface } from "app/domain/interface/registry/Descript
 import type { Interaction } from "app/domain/interface/InteractionHandler.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 
-let mockRegistry: RegistryInterface;
-
-vi.mock("app/domain/registry/RegistryProvider.js", () => ({
-    get registry() { return mockRegistry; },
-}));
 import { Keys } from "app/domain/keys/Keys.js";
 import { ListenerRegistrationService } from "app/domain/service/ListenerRegistrationService.js";
 
@@ -81,7 +76,6 @@ describe("ListenerRegistrationService", () => {
         vi.spyOn(console, "log").mockImplementation(() => undefined);
         vi.spyOn(console, "warn").mockImplementation(() => undefined);
         vi.spyOn(console, "error").mockImplementation(() => undefined);
-        mockRegistry = makeRegistry();
     });
 
     afterEach(() => {
@@ -95,8 +89,8 @@ describe("ListenerRegistrationService", () => {
     describe("registerDiscoveredListeners()", () => {
         test("registers the interaction router and returns 1 when no event listeners", () => {
             const { repository } = makeRepository();
-            mockRegistry = makeRegistry();
-            const service = new ListenerRegistrationService(repository);
+            const registry = makeRegistry();
+            const service = new ListenerRegistrationService(repository, registry);
 
             const total = service.registerDiscoveredListeners();
 
@@ -107,11 +101,11 @@ describe("ListenerRegistrationService", () => {
         test("returns 1 + N when N event descriptors are found", () => {
             const { descriptor: evt1 } = makeDescriptor(Keys.event("messageCreate"), REGISTRY_KINDS.EVENT);
             const { descriptor: evt2 } = makeDescriptor(Keys.event("guildMemberAdd"), REGISTRY_KINDS.EVENT);
-            mockRegistry = makeRegistry({
+            const registry = makeRegistry({
                 list: vi.fn().mockReturnValue([evt1, evt2]),
             });
             const { repository } = makeRepository();
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
 
             const total = service.registerDiscoveredListeners();
 
@@ -129,11 +123,11 @@ describe("ListenerRegistrationService", () => {
                 get handlerClass(): never { throw new Error("boom"); },
             } as unknown as DescriptorInterface;
 
-            mockRegistry = makeRegistry({
+            const registry = makeRegistry({
                 list: vi.fn().mockReturnValue([badDescriptor, goodDescriptor]),
             });
             const { repository } = makeRepository();
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
 
             const total = service.registerDiscoveredListeners();
 
@@ -143,14 +137,14 @@ describe("ListenerRegistrationService", () => {
         });
 
         test("isolates interaction router failure and returns 0 listeners from router", () => {
-            mockRegistry = makeRegistry();
+            const registry = makeRegistry();
             const repository: ListenerRepository = {
                 registerInteractionListener: vi.fn(() => { throw new Error("router failed"); }),
                 registerEventHandlerClass: vi.fn(),
                 registerEventListener: vi.fn(),
                 getListenerSummary: vi.fn().mockReturnValue({ eventListeners: 0, interactionListeners: 0, total: 0 }),
             } as unknown as ListenerRepository;
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
 
             const total = service.registerDiscoveredListeners();
 
@@ -166,9 +160,9 @@ describe("ListenerRegistrationService", () => {
     describe("event listener once flag propagation", () => {
         test("passes once=true when event metadata.once is true", () => {
             const { descriptor } = makeDescriptor(Keys.event("ready"), REGISTRY_KINDS.EVENT, { once: true });
-            mockRegistry = makeRegistry({ list: vi.fn().mockReturnValue([descriptor]) });
+            const registry = makeRegistry({ list: vi.fn().mockReturnValue([descriptor]) });
             const { repository } = makeRepository();
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
 
             service.registerDiscoveredListeners();
 
@@ -181,9 +175,9 @@ describe("ListenerRegistrationService", () => {
 
         test("passes once=undefined when event metadata.once is not set", () => {
             const { descriptor } = makeDescriptor(Keys.event("messageCreate"), REGISTRY_KINDS.EVENT);
-            mockRegistry = makeRegistry({ list: vi.fn().mockReturnValue([descriptor]) });
+            const registry = makeRegistry({ list: vi.fn().mockReturnValue([descriptor]) });
             const { repository } = makeRepository();
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
 
             service.registerDiscoveredListeners();
 
@@ -200,33 +194,33 @@ describe("ListenerRegistrationService", () => {
     // -----------------------------------------------------------------------
 
     describe("interaction routing", () => {
-        async function getHandler(): Promise<(interaction: Interaction) => Promise<unknown>> {
+        async function getHandler(registry: RegistryInterface = makeRegistry()): Promise<(interaction: Interaction) => Promise<unknown>> {
             const { repository, getRouterHandler } = makeRepository();
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
             service.registerDiscoveredListeners();
             return getRouterHandler();
         }
 
         test("routes slash interaction to handler via slash key", async () => {
             const { descriptor, handleSpy } = makeDescriptor(Keys.slash("ping"), REGISTRY_KINDS.SLASH);
-            mockRegistry = makeRegistry({
+            const registry = makeRegistry({
                 get: vi.fn().mockReturnValue(descriptor),
             });
-            const handler = await getHandler();
+            const handler = await getHandler(registry);
 
             await handler({ type: "slash", commandName: "ping", id: "1" });
 
-            expect(mockRegistry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(Keys.slash("ping"));
+            expect(registry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(Keys.slash("ping"));
             expect(handleSpy).toHaveBeenCalledTimes(1);
         });
 
         test("routes slash interaction with subcommand group + subcommand to composite key", async () => {
             const key = Keys.slash("admin", "user", "ban");
             const { descriptor, handleSpy } = makeDescriptor(key, REGISTRY_KINDS.SLASH);
-            mockRegistry = makeRegistry({
+            const registry = makeRegistry({
                 get: vi.fn().mockReturnValue(descriptor),
             });
-            const handler = await getHandler();
+            const handler = await getHandler(registry);
 
             await handler({
                 type: "slash",
@@ -236,31 +230,31 @@ describe("ListenerRegistrationService", () => {
                 id: "1",
             });
 
-            expect(mockRegistry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
+            expect(registry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
             expect(handleSpy).toHaveBeenCalledTimes(1);
         });
 
         test("routes context:user interaction to handler via contextUser key", async () => {
             const key = Keys.contextUser("Check Profile");
             const { descriptor, handleSpy } = makeDescriptor(key, REGISTRY_KINDS.CONTEXT_USER);
-            mockRegistry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
+            const handler = await getHandler(registry);
 
             await handler({ type: "context:user", commandName: "Check Profile", id: "1" });
 
-            expect(mockRegistry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
+            expect(registry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
             expect(handleSpy).toHaveBeenCalledTimes(1);
         });
 
         test("routes context:message interaction to handler via contextMessage key", async () => {
             const key = Keys.contextMessage("Analyze Text");
             const { descriptor, handleSpy } = makeDescriptor(key, REGISTRY_KINDS.CONTEXT_MESSAGE);
-            mockRegistry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
+            const handler = await getHandler(registry);
 
             await handler({ type: "context:message", commandName: "Analyze Text", id: "1" });
 
-            expect(mockRegistry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
+            expect(registry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
             expect(handleSpy).toHaveBeenCalledTimes(1);
         });
 
@@ -269,8 +263,8 @@ describe("ListenerRegistrationService", () => {
             const { descriptor, handleSpy } = makeDescriptor(namespacedKey, REGISTRY_KINDS.STRING_SELECT);
             const getMock = vi.fn().mockReturnValue(descriptor);
             const hasMock = vi.fn().mockReturnValue(true); // namespaced key exists
-            mockRegistry = makeRegistry({ get: getMock, has: hasMock });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: getMock, has: hasMock });
+            const handler = await getHandler(registry);
 
             await handler({ type: "component", customId: "poll", componentType: "string-select", id: "1" });
 
@@ -285,8 +279,8 @@ describe("ListenerRegistrationService", () => {
             const namespacedKey = Keys.component({ namespace: "string-select", id: "poll" });
             const hasMock = vi.fn().mockReturnValue(false); // namespaced key does NOT exist
             const getMock = vi.fn((key: string) => (key === legacyKey ? descriptor : undefined)) as unknown as RegistryInterface["get"];
-            mockRegistry = makeRegistry({ get: getMock, has: hasMock });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: getMock, has: hasMock });
+            const handler = await getHandler(registry);
 
             await handler({ type: "component", customId: "poll", componentType: "string-select", id: "1" });
 
@@ -298,20 +292,20 @@ describe("ListenerRegistrationService", () => {
         test("routes component interaction without componentType via legacy key", async () => {
             const legacyKey = Keys.component({ id: "confirm" });
             const { descriptor, handleSpy } = makeDescriptor(legacyKey, REGISTRY_KINDS.BUTTON);
-            mockRegistry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
+            const handler = await getHandler(registry);
 
             await handler({ type: "component", customId: "confirm", id: "1" });
 
-            expect(mockRegistry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(legacyKey);
+            expect(registry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(legacyKey);
             expect(handleSpy).toHaveBeenCalledTimes(1);
         });
 
         test("routes autocomplete interaction via option-specific key", async () => {
             const key = Keys.autocomplete(Keys.slash("search"), "query");
             const { descriptor, handleSpy } = makeDescriptor(key, REGISTRY_KINDS.AUTOCOMPLETE);
-            mockRegistry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: vi.fn().mockReturnValue(descriptor) });
+            const handler = await getHandler(registry);
 
             await handler({
                 type: "autocomplete",
@@ -320,7 +314,7 @@ describe("ListenerRegistrationService", () => {
                 id: "1",
             });
 
-            expect(mockRegistry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
+            expect(registry.get as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(key);
             expect(handleSpy).toHaveBeenCalledTimes(1);
         });
 
@@ -328,8 +322,8 @@ describe("ListenerRegistrationService", () => {
             const fallbackKey = Keys.autocomplete(Keys.slash("search"));
             const { descriptor, handleSpy } = makeDescriptor(fallbackKey, REGISTRY_KINDS.AUTOCOMPLETE);
             const getMock = vi.fn((key: string) => (key === fallbackKey ? descriptor : undefined)) as unknown as RegistryInterface["get"];
-            mockRegistry = makeRegistry({ get: getMock });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: getMock });
+            const handler = await getHandler(registry);
 
             await handler({
                 type: "autocomplete",
@@ -345,8 +339,8 @@ describe("ListenerRegistrationService", () => {
         });
 
         test("logs a warning when no handler is found for an interaction", async () => {
-            mockRegistry = makeRegistry({ get: vi.fn().mockReturnValue(undefined) });
-            const handler = await getHandler();
+            const registry = makeRegistry({ get: vi.fn().mockReturnValue(undefined) });
+            const handler = await getHandler(registry);
 
             await handler({ type: "slash", commandName: "unknown", id: "1" });
 
@@ -356,7 +350,6 @@ describe("ListenerRegistrationService", () => {
         });
 
         test("logs error and does not throw for component interaction with missing customId", async () => {
-            mockRegistry = makeRegistry();
             const handler = await getHandler();
 
             await expect(
@@ -366,7 +359,6 @@ describe("ListenerRegistrationService", () => {
         });
 
         test("logs error and does not throw for slash interaction with missing commandName", async () => {
-            mockRegistry = makeRegistry();
             const handler = await getHandler();
 
             await expect(
@@ -391,9 +383,9 @@ describe("ListenerRegistrationService", () => {
                 if (kind === REGISTRY_KINDS.AUTOCOMPLETE) return 4;
                 return 0;
             });
-            mockRegistry = makeRegistry({ size: sizeMock });
+            const registry = makeRegistry({ size: sizeMock });
             const { repository } = makeRepository();
-            const service = new ListenerRegistrationService(repository);
+            const service = new ListenerRegistrationService(repository, registry);
 
             const summary = service.getRegistrationSummary();
 
