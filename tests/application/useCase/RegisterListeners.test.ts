@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
-import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
+import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 
 const mocks = vi.hoisted(() => {
     const getEnabledModules = vi.fn();
@@ -56,12 +56,12 @@ describe("RegisterListeners", () => {
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
         const listenerRepository = {} as ListenerRepository;
-        const registry = {} as PlatformRegistryReaderInterface;
-        const useCase = new RegisterListeners(listenerRepository, registry);
+        const registry = {} as RegistryInterface;
+        const useCase = new RegisterListeners(listenerRepository);
 
         await useCase.execute();
 
-        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository, registry);
+        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository);
         expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
         expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
         expect(moduleA.discoverListeners).toHaveBeenCalledTimes(1);
@@ -86,7 +86,7 @@ describe("RegisterListeners", () => {
         const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        const useCase = new RegisterListeners({} as ListenerRepository, {} as PlatformRegistryReaderInterface);
+        const useCase = new RegisterListeners({} as ListenerRepository);
         await useCase.execute();
 
         expect(errorSpy).toHaveBeenCalledWith(
@@ -105,7 +105,7 @@ describe("RegisterListeners", () => {
 
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        const useCase = new RegisterListeners({} as ListenerRepository, {} as PlatformRegistryReaderInterface);
+        const useCase = new RegisterListeners({} as ListenerRepository);
         await useCase.execute();
 
         expect(mocks.registerDiscoveredListeners).toHaveBeenCalledTimes(1);

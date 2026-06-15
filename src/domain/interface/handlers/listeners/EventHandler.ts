@@ -1,6 +1,5 @@
-import type { HandlerInterface } from "../HandlerInterface.js";
-import { REGISTRY_KINDS } from "../../registry/types.js";
+import type { EventHandlerInterface } from "../HandlerInterface.js";
 
-export interface EventHandler extends HandlerInterface<typeof REGISTRY_KINDS.EVENT> {
+export interface EventHandler extends EventHandlerInterface {
     name: string;
 }

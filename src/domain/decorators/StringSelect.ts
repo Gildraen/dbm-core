@@ -1,6 +1,5 @@
 import type { StringSelectHandler } from "app/domain/interface/handlers/components/StringSelectHandler.js";
-import type { StringSelectMetadata } from "app/domain/types/metadata/StringSelectMetadata.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -25,18 +24,10 @@ import { Keys } from "app/domain/keys/Keys.js";
  */
 export function StringSelect(customId: string) {
     return function <T extends new () => StringSelectHandler>(target: T): T {
-        // Register in the global registry
-        const metadata: StringSelectMetadata = {
-            name: target.name,
-            customId: customId,
-            componentType: 'STRING_SELECT'
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.component({ namespace: 'string-select', id: customId }),
             kind: REGISTRY_KINDS.STRING_SELECT,
-            metadata: metadata,
+            metadata: { name: target.name, customId, componentType: 'STRING_SELECT' },
             handlerClass: target
         });
 

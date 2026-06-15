@@ -2,13 +2,12 @@ import { config } from "app/domain/config/Config.js";
 import { loadModule } from "app/domain/service/ModuleLoader.js";
 import { ListenerRegistrationService } from "app/domain/service/ListenerRegistrationService.js";
 import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
-import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
 
 export class RegisterListeners {
     private readonly listenerRegistrationService: ListenerRegistrationService;
 
-    public constructor(listenerRepository: ListenerRepository, registry: PlatformRegistryReaderInterface) {
-        this.listenerRegistrationService = new ListenerRegistrationService(listenerRepository, registry);
+    public constructor(listenerRepository: ListenerRepository) {
+        this.listenerRegistrationService = new ListenerRegistrationService(listenerRepository);
     }
 
     public async execute() {

@@ -1,8 +1,5 @@
-import type { CommandHandlerInterface } from "./CommandHandlerInterface.js";
-import type { PlatformUserContextCommand } from "app/domain/interface/commands/PlatformUserContextCommand.js";
-import { REGISTRY_KINDS } from "../../registry/types.js";
+import type { CommandHandlerInterface } from "../HandlerInterface.js";
 
-export interface UserContextMenuHandler extends CommandHandlerInterface<typeof REGISTRY_KINDS.CONTEXT_USER> {
+export interface UserContextMenuHandler extends CommandHandlerInterface {
     name: string;
-    buildCommand(): PlatformUserContextCommand;
 }

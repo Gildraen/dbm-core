@@ -1,0 +1,10 @@
+{
+  "name": "dbm-core-examples",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node ../node_modules/tsx/dist/cli.mjs --env-file=.env.local --tsconfig tsconfig.json bot/index.ts",
+    "stop": "pkill -f 'bot/index.ts'; exit 0"
+  }
+}

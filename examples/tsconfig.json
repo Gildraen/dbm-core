@@ -1,0 +1,25 @@
+{
+    "extends": "../tsconfig.json",
+    "compilerOptions": {
+        "rootDir": "..",
+        "outDir": "./dist",
+        "baseUrl": "..",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "paths": {
+            "app/*": [
+                "src/*"
+            ],
+            "@gildraen/dbm-core": [
+                "src/index.ts"
+            ],
+            "sample-module": [
+                "examples/sample-module/index.ts"
+            ]
+        }
+    },
+    "include": [
+        "./**/*.ts"
+    ],
+    "exclude": []
+}

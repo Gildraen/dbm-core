@@ -1,12 +1,28 @@
-import type { RegistryKey, Kind, KindMetadataMap, KindHandlerMap } from "./types.js";
+import { REGISTRY_KINDS } from "../registry/types.js";
+import type { HandlerInterface, EventHandlerInterface } from "../handlers/HandlerInterface.js";
 
 /**
- * Descriptor that holds handler registration information
- * Generic type K ensures that metadata and handler type match the kind
+ * Descriptor for interaction-based handlers (commands, components, autocomplete)
  */
-export interface DescriptorInterface<K extends Kind = Kind> {
-    readonly key: RegistryKey;
-    readonly kind: K;
-    readonly metadata: KindMetadataMap[K];
-    readonly handlerClass: new () => KindHandlerMap[K];
+export interface InteractionDescriptorInterface {
+    readonly key: string;
+    readonly kind: string;
+    readonly metadata: Record<string, unknown>;
+    readonly handlerClass: new () => HandlerInterface;
+}
+
+/**
+ * Descriptor for event-based handlers
+ */
+export interface EventDescriptorInterface {
+    readonly key: string;
+    readonly kind: typeof REGISTRY_KINDS.EVENT;
+    readonly metadata: Record<string, unknown>;
+    readonly handlerClass: new () => EventHandlerInterface;
+}
+
+export type DescriptorInterface = InteractionDescriptorInterface | EventDescriptorInterface;
+
+export function isEventDescriptor(d: DescriptorInterface): d is EventDescriptorInterface {
+    return d.kind === REGISTRY_KINDS.EVENT;
 }

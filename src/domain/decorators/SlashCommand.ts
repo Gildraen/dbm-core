@@ -1,6 +1,5 @@
 import type { SlashCommandHandler } from "app/domain/interface/handlers/commands/SlashCommandHandler.js";
-import type { SlashCommandMetadata } from "app/domain/types/metadata/SlashCommandMetadata.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -23,16 +22,10 @@ import { Keys } from "app/domain/keys/Keys.js";
  */
 export function SlashCommand(name: string, description: string) {
     return function <T extends new () => SlashCommandHandler>(target: T): T {
-        const metadata: SlashCommandMetadata = {
-            name: name,
-            description: description
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.slash(name),
             kind: REGISTRY_KINDS.SLASH,
-            metadata: metadata,
+            metadata: { name, description },
             handlerClass: target
         });
 

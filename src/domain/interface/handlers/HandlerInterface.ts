@@ -1,25 +1,22 @@
-import type { Kind, KindHandleArgsMap } from "../registry/types.js";
+import type { Interaction } from "../InteractionHandler.js";
 
 /**
- * Base interface that all handler classes must implement
- * This provides a common contract for all decorators (SlashCommand, EventListener, etc.)
- *
- * Generic type K allows TypeScript to infer the exact parameter types for handle()
+ * Base interface for all interaction handler classes
  */
-export interface HandlerInterface<K extends Kind = Kind> {
-    /**
-     * The name/identifier of the handler
-     */
-    readonly name: string;
+export interface HandlerInterface {
+    handle(interaction: Interaction): Promise<unknown>;
+}
 
-    /**
-     * Handle the interaction or event with type-safe parameters
-     *
-     * @param args - Type-safe parameters based on handler kind (via KindHandleArgsMap)
-     *               - For interaction handlers: single typed Interaction parameter
-     *               - For event handlers: variable event-specific parameters
-     * @returns Promise that resolves when handling is complete
-     *          Return value is typically unused (handlers perform side effects)
-     */
-    handle(...args: KindHandleArgsMap[K]): Promise<unknown>;
+/**
+ * Command handler interface - adds buildCommand for command registration
+ */
+export interface CommandHandlerInterface extends HandlerInterface {
+    buildCommand(): Record<string, unknown>;
+}
+
+/**
+ * Event handler interface - accepts variable args for platform events
+ */
+export interface EventHandlerInterface {
+    handle(...args: unknown[]): Promise<unknown>;
 }

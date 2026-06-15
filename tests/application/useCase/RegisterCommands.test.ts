@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
-import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
+import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 
 const mocks = vi.hoisted(() => {
     const getEnabledModules = vi.fn();
@@ -55,12 +55,12 @@ describe("RegisterCommands", () => {
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
         const commandRepository = {} as CommandRepository;
-        const registry = {} as PlatformRegistryReaderInterface;
-        const useCase = new RegisterCommands(commandRepository, registry);
+        const registry = {} as RegistryInterface;
+        const useCase = new RegisterCommands(commandRepository);
 
         await useCase.execute();
 
-        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository, registry);
+        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository);
         expect(mocks.loadModule).toHaveBeenNthCalledWith(1, "module-a");
         expect(mocks.loadModule).toHaveBeenNthCalledWith(2, "module-b");
         expect(moduleA.discoverCommands).toHaveBeenCalledTimes(1);
@@ -83,7 +83,7 @@ describe("RegisterCommands", () => {
 
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        const useCase = new RegisterCommands({} as CommandRepository, {} as PlatformRegistryReaderInterface);
+        const useCase = new RegisterCommands({} as CommandRepository);
         await useCase.execute();
 
         expect(errorSpy).toHaveBeenCalledWith(
@@ -99,7 +99,7 @@ describe("RegisterCommands", () => {
 
         const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-        const useCase = new RegisterCommands({} as CommandRepository, {} as PlatformRegistryReaderInterface);
+        const useCase = new RegisterCommands({} as CommandRepository);
         await useCase.execute();
 
         expect(mocks.registerDiscoveredCommands).toHaveBeenCalledTimes(1);

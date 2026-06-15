@@ -1,6 +1,5 @@
 import type { UserContextMenuHandler } from "app/domain/interface/handlers/commands/UserContextMenuHandler.js";
-import type { UserContextMenuMetadata } from "app/domain/types/metadata/UserContextMenuMetadata.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -31,16 +30,10 @@ import { Keys } from "app/domain/keys/Keys.js";
  */
 export function UserContextMenu(name: string) {
     return function <T extends new () => UserContextMenuHandler>(target: T): T {
-        // Register in the global registry
-        const metadata: UserContextMenuMetadata = {
-            name: name
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.contextUser(name),
             kind: REGISTRY_KINDS.CONTEXT_USER,
-            metadata: metadata,
+            metadata: { name },
             handlerClass: target
         });
 

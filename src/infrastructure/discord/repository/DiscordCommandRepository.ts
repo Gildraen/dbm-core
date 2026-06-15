@@ -1,19 +1,8 @@
 import { ApplicationCommandType, ChannelType, PermissionsBitField, type Client, type RESTPostAPIApplicationCommandsJSONBody } from "discord.js";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
-import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
-import type { PlatformSlashCommand } from "app/domain/interface/commands/PlatformSlashCommand.js";
-import type { PlatformUserContextCommand } from "app/domain/interface/commands/PlatformUserContextCommand.js";
-import type { PlatformMessageContextCommand } from "app/domain/interface/commands/PlatformMessageContextCommand.js";
-import {
-    isPlatformSlashCommand,
-    isPlatformUserContextCommand,
-    isPlatformMessageContextCommand,
-} from "app/domain/types/commands/CommandTypeGuards.js";
-import { COMMAND_TYPES } from "app/domain/types/commands/CommandTypes.js";
 
 /**
  * Discord API implementation of CommandRepository
- * Handles registration and management of Discord application commands
  */
 export class DiscordCommandRepository implements CommandRepository {
     private readonly client: Client;
@@ -22,141 +11,104 @@ export class DiscordCommandRepository implements CommandRepository {
         this.client = client;
     }
 
-    async registerCommands(commands: PlatformCommand[]): Promise<number> {
-        if (!this.client.application) {
-            throw new Error("Discord client application is not available");
-        }
+    async registerCommands(commands: Record<string, unknown>[]): Promise<number> {
+        const application = await this.requireClientApplication();
 
         if (commands.length === 0) {
             return 0;
         }
 
-        // Convert platform commands to Discord format
         const discordCommands = commands.map(cmd => this.adaptToDiscordCommand(cmd));
-
-        const registeredCommands = await this.client.application.commands.set(discordCommands);
+        const registeredCommands = await application.commands.set(discordCommands);
         return registeredCommands.size;
     }
 
-    /**
-     * Adapt a platform command to Discord.js format
-     */
-    private adaptToDiscordCommand(command: PlatformCommand): RESTPostAPIApplicationCommandsJSONBody {
-        if (isPlatformSlashCommand(command)) {
-            return this.adaptSlashCommand(command);
-        } else if (isPlatformUserContextCommand(command)) {
-            return this.adaptUserContextCommand(command);
-        } else {
-            return this.adaptMessageContextCommand(command as PlatformMessageContextCommand);
+    private adaptToDiscordCommand(command: Record<string, unknown>): RESTPostAPIApplicationCommandsJSONBody {
+        const type = command.type as string | undefined;
+        const name = command.name as string;
+
+        if (type === 'slash' || type === undefined) {
+            return {
+                type: ApplicationCommandType.ChatInput,
+                name,
+                description: (command.description as string) || 'No description',
+                options: this.adaptOptions(command.options as unknown[] | undefined),
+                default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions as string[] | undefined),
+                dm_permission: command.dmPermission as boolean | undefined,
+                nsfw: command.nsfw as boolean | undefined
+            };
         }
+
+        if (type === 'context:user') {
+            return {
+                type: ApplicationCommandType.User,
+                name,
+                default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions as string[] | undefined),
+                dm_permission: command.dmPermission as boolean | undefined
+            };
+        }
+
+        if (type === 'context:message') {
+            return {
+                type: ApplicationCommandType.Message,
+                name,
+                default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions as string[] | undefined),
+                dm_permission: command.dmPermission as boolean | undefined
+            };
+        }
+
+        throw new Error(`Unknown command type: "${type}"`);
     }
 
-    /**
-     * Adapt platform slash command to Discord format
-     */
-    private adaptSlashCommand(command: PlatformSlashCommand): RESTPostAPIApplicationCommandsJSONBody {
-        return {
-            type: ApplicationCommandType.ChatInput,
-            name: command.name,
-            description: command.description,
-            options: command.options?.map(option => ({
-                type: this.adaptOptionType(option.type),
-                name: option.name,
-                description: option.description,
-                required: option.required,
-                choices: option.choices,
-                min_value: option.minValue,
-                max_value: option.maxValue,
-                min_length: option.minLength,
-                max_length: option.maxLength,
-                autocomplete: option.autocomplete,
-                channel_types: this.adaptChannelTypes(option.channelTypes)
-            })),
-            default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
-            dm_permission: command.dmPermission,
-            nsfw: command.nsfw
-        };
+    private adaptOptions(options?: unknown[]): RESTPostAPIApplicationCommandsJSONBody['options'] {
+        if (!options || options.length === 0) return undefined;
+        return options.map(opt => {
+            const o = opt as Record<string, unknown>;
+            return {
+                type: this.adaptOptionType(o.type as string),
+                name: o.name as string,
+                description: (o.description as string) || '',
+                required: o.required as boolean | undefined,
+                choices: o.choices as Array<{ name: string; value: string | number }> | undefined,
+                min_value: o.minValue as number | undefined,
+                max_value: o.maxValue as number | undefined,
+                min_length: o.minLength as number | undefined,
+                max_length: o.maxLength as number | undefined,
+                autocomplete: o.autocomplete as boolean | undefined,
+                channel_types: this.adaptChannelTypes(o.channelTypes as string[] | undefined)
+            };
+        }) as RESTPostAPIApplicationCommandsJSONBody['options'];
     }
 
-    /**
-     * Adapt platform user context command to Discord format
-     */
-    private adaptUserContextCommand(command: PlatformUserContextCommand): RESTPostAPIApplicationCommandsJSONBody {
-        return {
-            type: ApplicationCommandType.User,
-            name: command.name,
-            default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
-            dm_permission: command.dmPermission
-        };
-    }
-
-    /**
-     * Adapt platform message context command to Discord format
-     */
-    private adaptMessageContextCommand(command: PlatformMessageContextCommand): RESTPostAPIApplicationCommandsJSONBody {
-        return {
-            type: ApplicationCommandType.Message,
-            name: command.name,
-            default_member_permissions: this.adaptDefaultMemberPermissions(command.defaultMemberPermissions),
-            dm_permission: command.dmPermission
-        };
-    }
-
-    /**
-     * Discord expects default_member_permissions as a decimal bitfield string.
-     * Supports both numeric-string bitfields and Discord permission flag names.
-     */
     private adaptDefaultMemberPermissions(permissions?: string[]): string | undefined {
-        if (!permissions || permissions.length === 0) {
-            return undefined;
-        }
+        if (!permissions || permissions.length === 0) return undefined;
 
         let bitfield = 0n;
-
         for (const permission of permissions) {
             if (/^\d+$/.test(permission)) {
                 bitfield |= BigInt(permission);
-                continue;
-            }
-
-            if (permission in PermissionsBitField.Flags) {
+            } else if (permission in PermissionsBitField.Flags) {
                 const flag = PermissionsBitField.Flags[permission as keyof typeof PermissionsBitField.Flags];
                 bitfield |= BigInt(flag.toString());
-                continue;
+            } else {
+                throw new Error(`Unknown permission flag: "${permission}"`);
             }
-
-            throw new Error(`Unknown permission flag: "${permission}". Check spelling against PermissionsBitField.Flags.`);
         }
 
         return bitfield === 0n ? undefined : bitfield.toString();
     }
 
-    /**
-     * Adapt platform option type to Discord option type
-     */
     private adaptOptionType(type: string): number {
-        switch (type) {
-            case 'string': return 3;
-            case 'integer': return 4;
-            case 'boolean': return 5;
-            case 'user': return 6;
-            case 'channel': return 7;
-            case 'role': return 8;
-            case 'mentionable': return 9;
-            case 'number': return 10;
-            case 'attachment': return 11;
-            default: throw new Error(`Unknown option type: "${type}". Valid types: string, integer, boolean, user, channel, role, mentionable, number, attachment.`);
-        }
+        const types: Record<string, number> = {
+            string: 3, integer: 4, boolean: 5, user: 6,
+            channel: 7, role: 8, mentionable: 9, number: 10, attachment: 11
+        };
+        if (!(type in types)) throw new Error(`Unknown option type: "${type}"`);
+        return types[type];
     }
 
-    /**
-     * Adapt platform channel type strings to Discord ChannelType enum values.
-     * Supports numeric strings (e.g. "0") and enum-like names (e.g. "GuildText", "guild_text").
-     */
     private adaptChannelTypes(channelTypes?: string[]): ChannelType[] | undefined {
-        if (!channelTypes || channelTypes.length === 0) {
-            return undefined;
-        }
+        if (!channelTypes || channelTypes.length === 0) return undefined;
 
         const enumEntries = Object.entries(ChannelType)
             .filter(([, value]) => typeof value === 'number') as Array<[string, number]>;
@@ -166,23 +118,16 @@ export class DiscordCommandRepository implements CommandRepository {
             enumEntries.map(([name, value]) => [this.normalizeEnumName(name), value as ChannelType])
         );
 
-        const adapted = channelTypes.map((channelType) => {
+        return Array.from(new Set(channelTypes.map((channelType) => {
             if (/^\d+$/.test(channelType)) {
                 const numericType = Number(channelType);
-                if (!validNumericTypes.has(numericType)) {
-                    throw new Error(`Unknown channel type: "${channelType}".`);
-                }
+                if (!validNumericTypes.has(numericType)) throw new Error(`Unknown channel type: "${channelType}"`);
                 return numericType as ChannelType;
             }
-
             const mapped = normalizedNameToType.get(this.normalizeEnumName(channelType));
-            if (mapped === undefined) {
-                throw new Error(`Unknown channel type: "${channelType}".`);
-            }
+            if (mapped === undefined) throw new Error(`Unknown channel type: "${channelType}"`);
             return mapped;
-        });
-
-        return Array.from(new Set(adapted));
+        })));
     }
 
     private normalizeEnumName(value: string): string {
@@ -190,49 +135,61 @@ export class DiscordCommandRepository implements CommandRepository {
     }
 
     async clearAllCommands(): Promise<number> {
-        if (!this.client.application) {
-            throw new Error("Discord client application is not available");
-        }
+        const application = await this.requireClientApplication();
 
-        const currentCommands = await this.client.application.commands.fetch();
+        const currentCommands = await application.commands.fetch();
         const commandCount = currentCommands.size;
-
-        await this.client.application.commands.set([]);
-
+        await application.commands.set([]);
         return commandCount;
     }
 
-    async getRegisteredCommands(): Promise<PlatformCommand[]> {
+    async getRegisteredCommands(): Promise<Record<string, unknown>[]> {
+        const application = await this.requireClientApplication();
+
+        const commands = await application.commands.fetch();
+        return commands.map(command => {
+
+            const json = command.toJSON() as any;
+            const type = json.type;
+            return {
+                type: type === ApplicationCommandType.ChatInput ? 'slash'
+                    : type === ApplicationCommandType.User ? 'context:user'
+                        : 'context:message',
+                name: json.name,
+                description: json.description
+            };
+        });
+    }
+
+    private async requireClientApplication() {
+        if (!this.client.application) {
+            await this.waitForReady();
+        }
+
         if (!this.client.application) {
             throw new Error("Discord client application is not available");
         }
 
-        const commands = await this.client.application.commands.fetch();
-        return commands.map(command => this.adaptFromDiscordCommand(command.toJSON() as RESTPostAPIApplicationCommandsJSONBody));
+        return this.client.application;
     }
 
-    /**
-     * Adapt a Discord command back to platform format (simplified version)
-     */
-    private adaptFromDiscordCommand(discordCommand: RESTPostAPIApplicationCommandsJSONBody): PlatformCommand {
-        const type = discordCommand.type;
-
-        if (type === 1) { // ApplicationCommandType.ChatInput
-            return {
-                type: COMMAND_TYPES.SLASH,
-                name: discordCommand.name,
-                description: discordCommand.description || 'No description'
-            };
-        } else if (type === 2) { // ApplicationCommandType.User
-            return {
-                type: COMMAND_TYPES.CONTEXT_USER,
-                name: discordCommand.name
-            };
-        } else { // ApplicationCommandType.Message
-            return {
-                type: COMMAND_TYPES.CONTEXT_MESSAGE,
-                name: discordCommand.name
-            };
+    private waitForReady(): Promise<void> {
+        if (this.client.isReady()) {
+            return Promise.resolve();
         }
+
+        return new Promise((resolve, reject) => {
+            const onReady = () => {
+                this.client.off("error", onError);
+                resolve();
+            };
+            const onError = (error: Error) => {
+                this.client.off("ready", onReady);
+                reject(error);
+            };
+
+            this.client.once("ready", onReady);
+            this.client.once("error", onError);
+        });
     }
 }

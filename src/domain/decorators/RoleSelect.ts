@@ -1,6 +1,5 @@
 import type { RoleSelectHandler } from "app/domain/interface/handlers/components/RoleSelectHandler.js";
-import type { RoleSelectMetadata } from "app/domain/types/metadata/RoleSelectMetadata.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -12,18 +11,10 @@ import { Keys } from "app/domain/keys/Keys.js";
  */
 export function RoleSelect(customId: string) {
     return function <T extends new () => RoleSelectHandler>(target: T): T {
-        // Register in the global registry
-        const metadata: RoleSelectMetadata = {
-            name: target.name,
-            customId: customId,
-            componentType: 'ROLE_SELECT'
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.component({ namespace: 'role-select', id: customId }),
             kind: REGISTRY_KINDS.ROLE_SELECT,
-            metadata: metadata,
+            metadata: { name: target.name, customId, componentType: 'ROLE_SELECT' },
             handlerClass: target
         });
 
