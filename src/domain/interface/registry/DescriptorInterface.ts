@@ -1,12 +1,13 @@
 import { REGISTRY_KINDS } from "../registry/types.js";
 import type { HandlerInterface, EventHandlerInterface } from "../handlers/HandlerInterface.js";
+import type { Kind, RegistryKey } from "../registry/types.js";
 
 /**
  * Descriptor for interaction-based handlers (commands, components, autocomplete)
  */
 export interface InteractionDescriptorInterface {
-    readonly key: string;
-    readonly kind: string;
+    readonly key: RegistryKey;
+    readonly kind: Kind;
     readonly metadata: Record<string, unknown>;
     readonly handlerClass: new () => HandlerInterface;
 }
@@ -15,7 +16,7 @@ export interface InteractionDescriptorInterface {
  * Descriptor for event-based handlers
  */
 export interface EventDescriptorInterface {
-    readonly key: string;
+    readonly key: RegistryKey;
     readonly kind: typeof REGISTRY_KINDS.EVENT;
     readonly metadata: Record<string, unknown>;
     readonly handlerClass: new () => EventHandlerInterface;
