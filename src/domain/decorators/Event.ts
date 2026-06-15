@@ -1,7 +1,5 @@
 import type { EventHandler } from "app/domain/interface/handlers/listeners/EventHandler.js";
-import type { EventListenerMetadata } from "app/domain/types/metadata/EventListenerMetadata.js";
-import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -30,20 +28,12 @@ import { Keys } from "app/domain/keys/Keys.js";
  * }
  * ```
  */
-export function Event(eventName: PlatformEventKey, once: boolean = false) {
+export function Event(eventName: string, once: boolean = false) {
     return function <T extends new () => EventHandler>(target: T): T {
-        // Register in the global registry
-        const metadata: EventListenerMetadata = {
-            name: target.name,
-            eventName: eventName,
-            once
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.event(eventName),
             kind: REGISTRY_KINDS.EVENT,
-            metadata: metadata,
+            metadata: { name: target.name, eventName, once },
             handlerClass: target
         });
 

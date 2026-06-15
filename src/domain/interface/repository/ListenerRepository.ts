@@ -1,32 +1,30 @@
-import type { PlatformEvents } from "app/domain/interface/events/PlatformEvents.js";
 import type { Interaction } from "../InteractionHandler.js";
 
 /**
  * Repository interface for managing event listeners
- * Clean Architecture compliant without direct platform dependencies
  */
 export interface ListenerRepository {
     /**
-     * Register an event listener
+     * Register an event listener by name
      * @param eventName The event name
      * @param handler The event handler function
      * @param once Whether this is a one-time listener
      */
-    registerEventListener<K extends keyof PlatformEvents>(
-        eventName: K,
-        handler: (...args: PlatformEvents[K]) => Promise<unknown>,
+    registerEventListener(
+        eventName: string,
+        handler: (...args: unknown[]) => Promise<unknown>,
         once?: boolean
     ): void;
 
     /**
-     * Register an event handler class
+     * Register an event handler class by event name
      * @param eventName The event name
      * @param handlerClass The handler class constructor
      * @param once Whether this is a one-time listener
      */
-    registerEventHandlerClass<K extends keyof PlatformEvents>(
-        eventName: K,
-        handlerClass: new () => { handle: (...args: PlatformEvents[K]) => Promise<unknown> },
+    registerEventHandlerClass(
+        eventName: string,
+        handlerClass: new () => { handle: (...args: any[]) => Promise<unknown> },
         once?: boolean
     ): void;
 

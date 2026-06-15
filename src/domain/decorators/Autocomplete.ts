@@ -1,6 +1,5 @@
 import type { AutocompleteHandler } from "app/domain/interface/handlers/listeners/AutocompleteHandler.js";
-import type { AutocompleteListenerMetadata } from "app/domain/types/metadata/AutocompleteListenerMetadata.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -39,18 +38,10 @@ import { Keys } from "app/domain/keys/Keys.js";
  */
 export function Autocomplete(commandName: string, optionName?: string) {
     return function <T extends new () => AutocompleteHandler>(target: T): T {
-        // Register in the global registry
-        const metadata: AutocompleteListenerMetadata = {
-            name: target.name,
-            commandName: commandName,
-            optionName: optionName
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.autocomplete(Keys.slash(commandName), optionName),
             kind: REGISTRY_KINDS.AUTOCOMPLETE,
-            metadata: metadata,
+            metadata: { name: target.name, commandName, optionName },
             handlerClass: target
         });
 

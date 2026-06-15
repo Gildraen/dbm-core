@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
-import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
+import type { RegistryInterface } from "app/domain/interface/registry/RegistryInterface.js";
 import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
-import { COMMAND_TYPES } from "app/domain/types/commands/CommandTypes.js";
+
+let mockRegistry: RegistryInterface;
+
+vi.mock("app/domain/registry/RegistryProvider.js", () => ({
+    get registry() { return mockRegistry; },
+}));
 import { CommandRegistrationService } from "app/domain/service/CommandRegistrationService.js";
-import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -13,8 +17,8 @@ import type { PlatformCommand } from "app/domain/types/commands/PlatformCommand.
 
 function makeDescriptor(
     key: string,
-    kind: typeof REGISTRY_KINDS[keyof typeof REGISTRY_KINDS],
-    command: PlatformCommand
+    kind: string,
+    command: Record<string, unknown>
 ): DescriptorInterface {
     return {
         key,
@@ -38,23 +42,21 @@ function makeRepository(registeredCount?: number): CommandRepository {
 
 function makeRegistry(
     kindMap: Partial<Record<string, DescriptorInterface[]>> = {}
-): PlatformRegistryReaderInterface {
-    const list = vi.fn((kind?: string) => kindMap[kind ?? ""] ?? []) as unknown as PlatformRegistryReaderInterface["list"];
-    const get = vi.fn().mockReturnValue(undefined) as unknown as PlatformRegistryReaderInterface["get"];
-    const has = vi.fn().mockReturnValue(false) as unknown as PlatformRegistryReaderInterface["has"];
-    const size = vi.fn().mockReturnValue(0) as unknown as PlatformRegistryReaderInterface["size"];
+): RegistryInterface {
+    const list = vi.fn((kind?: string) => kindMap[kind ?? ""] ?? []) as unknown as RegistryInterface["list"];
+    const get = vi.fn().mockReturnValue(undefined) as unknown as RegistryInterface["get"];
+    const has = vi.fn().mockReturnValue(false) as unknown as RegistryInterface["has"];
+    const size = vi.fn().mockReturnValue(0) as unknown as RegistryInterface["size"];
+    const upsert = vi.fn() as unknown as RegistryInterface["upsert"];
+    const remove = vi.fn().mockReturnValue(false) as unknown as RegistryInterface["remove"];
+    const clear = vi.fn() as unknown as RegistryInterface["clear"];
 
-    return {
-        list,
-        get,
-        has,
-        size,
-    };
+    return { list, get, has, size, upsert, remove, clear };
 }
 
-const SLASH_CMD: PlatformCommand = { type: COMMAND_TYPES.SLASH, name: "ping", description: "Ping the bot" };
-const CTX_USER_CMD: PlatformCommand = { type: COMMAND_TYPES.CONTEXT_USER, name: "Check Profile" };
-const CTX_MSG_CMD: PlatformCommand = { type: COMMAND_TYPES.CONTEXT_MESSAGE, name: "Analyze Text" };
+const SLASH_CMD = { type: 'slash', name: "ping", description: "Ping the bot" };
+const CTX_USER_CMD = { type: 'context:user', name: "Check Profile" };
+const CTX_MSG_CMD = { type: 'context:message', name: "Analyze Text" };
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -65,6 +67,7 @@ describe("CommandRegistrationService", () => {
         vi.spyOn(console, "log").mockImplementation(() => undefined);
         vi.spyOn(console, "warn").mockImplementation(() => undefined);
         vi.spyOn(console, "error").mockImplementation(() => undefined);
+        mockRegistry = makeRegistry();
     });
 
     afterEach(() => {
@@ -79,7 +82,8 @@ describe("CommandRegistrationService", () => {
         test("returns 0 and does not call repository when registry is empty", async () => {
             const repository = makeRepository();
             const registry = makeRegistry();
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             const result = await service.registerDiscoveredCommands();
 
@@ -100,7 +104,8 @@ describe("CommandRegistrationService", () => {
             const registry = makeRegistry({
                 [REGISTRY_KINDS.SLASH]: [descriptor],
             });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             const result = await service.registerDiscoveredCommands();
 
@@ -114,7 +119,8 @@ describe("CommandRegistrationService", () => {
             const registry = makeRegistry({
                 [REGISTRY_KINDS.CONTEXT_USER]: [descriptor],
             });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             const result = await service.registerDiscoveredCommands();
 
@@ -128,7 +134,8 @@ describe("CommandRegistrationService", () => {
             const registry = makeRegistry({
                 [REGISTRY_KINDS.CONTEXT_MESSAGE]: [descriptor],
             });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             const result = await service.registerDiscoveredCommands();
 
@@ -146,7 +153,8 @@ describe("CommandRegistrationService", () => {
                 [REGISTRY_KINDS.CONTEXT_USER]: [userDescriptor],
                 [REGISTRY_KINDS.CONTEXT_MESSAGE]: [msgDescriptor],
             });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             const result = await service.registerDiscoveredCommands();
 
@@ -162,7 +170,8 @@ describe("CommandRegistrationService", () => {
             const descriptor = makeDescriptor("slash:ping", REGISTRY_KINDS.SLASH, SLASH_CMD);
             const repository = makeRepository(0); // repository reports 0 registered
             const registry = makeRegistry({ [REGISTRY_KINDS.SLASH]: [descriptor] });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             const result = await service.registerDiscoveredCommands();
 
@@ -179,7 +188,8 @@ describe("CommandRegistrationService", () => {
             const descriptor = makeDescriptor("slash:ping", REGISTRY_KINDS.SLASH, SLASH_CMD);
             const repository = makeRepository(1);
             const registry = makeRegistry({ [REGISTRY_KINDS.SLASH]: [descriptor] });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             await service.registerDiscoveredCommands();
 
@@ -196,7 +206,8 @@ describe("CommandRegistrationService", () => {
                 [REGISTRY_KINDS.SLASH]: [slashDescriptor],
                 [REGISTRY_KINDS.CONTEXT_USER]: [userDescriptor],
             });
-            const service = new CommandRegistrationService(repository, registry);
+            mockRegistry = registry;
+            const service = new CommandRegistrationService(repository);
 
             await service.registerDiscoveredCommands();
 

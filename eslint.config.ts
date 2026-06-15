@@ -150,6 +150,10 @@ const strictConfig: Linter.Config = {
     },
 }
 
-const config: Array<Linter.Config> = [baseConfig, strictConfig];
+const config: Array<Linter.Config> = [
+    { ignores: ['lib/**'] },
+    baseConfig,
+    strictConfig
+];
 
 export default config;

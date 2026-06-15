@@ -6,9 +6,6 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 import { RegisterCommands } from "app/application/useCase/RegisterCommands.js";
 import { DiscordCommandRepository } from "app/infrastructure/discord/repository/DiscordCommandRepository.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
-import { createRegistry } from "app/infrastructure/registry/RegistryFactory.js";
-import { config } from "app/domain/config/Config.js";
 
 class RegisterDiscordCommandsCli {
     private readonly outputPath?: string;
@@ -49,21 +46,6 @@ Examples:
     public async run() {
         console.log("🚀 Starting Discord command registration...");
 
-        // Initialize registry before module discovery
-        try {
-            if (!registryProvider.isConfigured()) {
-                console.log("📦 Initializing registry...");
-                const coreConfig = config.getCoreConfig();
-                const registryInstance = createRegistry(coreConfig.registry);
-                registryProvider.configure(registryInstance);
-                console.log("✅ Registry initialized");
-            }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error("❌ Failed to initialize registry:", errorMessage);
-            process.exit(1);
-        }
-
         // Create Discord client for command registration
         const client = new Client({
             intents: [GatewayIntentBits.Guilds], // Minimal intents for command registration
@@ -78,8 +60,7 @@ Examples:
         const commandRepository = new DiscordCommandRepository(client);
 
         try {
-            const registry = registryProvider.getRegistry();
-            const useCase = new RegisterCommands(commandRepository, registry);
+            const useCase = new RegisterCommands(commandRepository);
             await useCase.execute();
 
             console.log("\n✅ Command registration completed");

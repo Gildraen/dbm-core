@@ -28,4 +28,8 @@
             ]
         }
     },
+    "exclude": [
+        "examples",
+        "lib"
+    ]
 }

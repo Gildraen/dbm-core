@@ -1,6 +1,5 @@
 import type { MessageContextMenuHandler } from "app/domain/interface/handlers/commands/MessageContextMenuHandler.js";
-import type { MessageContextMenuMetadata } from "app/domain/types/metadata/MessageContextMenuMetadata.js";
-import { registryProvider } from "app/domain/registry/RegistryProvider.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
 
@@ -31,16 +30,10 @@ import { Keys } from "app/domain/keys/Keys.js";
  */
 export function MessageContextMenu(name: string) {
     return function <T extends new () => MessageContextMenuHandler>(target: T): T {
-        // Register in the global registry
-        const metadata: MessageContextMenuMetadata = {
-            name: name
-        };
-
-        const registry = registryProvider.getRegistry();
         registry.upsert({
             key: Keys.contextMessage(name),
             kind: REGISTRY_KINDS.CONTEXT_MESSAGE,
-            metadata: metadata,
+            metadata: { name },
             handlerClass: target
         });
 

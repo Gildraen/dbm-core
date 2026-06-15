@@ -1,8 +1,17 @@
 {
     "name": "Node.js Discord Bot Development",
     "image": "mcr.microsoft.com/devcontainers/base:ubuntu24.04",
+    "containerEnv": {
+        "GH_CONFIG_DIR": "/workspaces/core/.devcontainer/.gh",
+        "GIT_SSH_COMMAND": "ssh -F /workspaces/core/.devcontainer/.ssh/config"
+    },
     "features": {
-        "ghcr.io/devcontainers/features/node:1": {}
+        "ghcr.io/devcontainers/features/node:2": {
+            "version": "26",
+            "npmVersion": "11.17.0",
+            "installYarnUsingApt": true
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "customizations": {
         "vscode": {

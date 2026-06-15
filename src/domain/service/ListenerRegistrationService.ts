@@ -1,28 +1,20 @@
 import type { ListenerRepository } from "app/domain/interface/repository/ListenerRepository.js";
 import type { Interaction } from "app/domain/interface/InteractionHandler.js";
-import type { PlatformRegistryReaderInterface } from "app/domain/interface/registry/PlatformRegistryReaderInterface.js";
-import type { DescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
-import type { Kind } from "app/domain/interface/registry/types.js";
+import type { EventDescriptorInterface, InteractionDescriptorInterface } from "app/domain/interface/registry/DescriptorInterface.js";
+import { isEventDescriptor } from "app/domain/interface/registry/DescriptorInterface.js";
 import { REGISTRY_KINDS } from "app/domain/interface/registry/types.js";
 import { Keys } from "app/domain/keys/Keys.js";
-import type { PlatformEventKey } from "app/domain/types/events/PlatformEventKey.js";
+import { registry } from "app/domain/registry/RegistryProvider.js";
 
 /**
  * Domain service for listener setup business logic
- * Contains the core logic for registering discovered listeners with the platform
- * Now fully platform-agnostic using the neutral registry
  */
 
 export class ListenerRegistrationService {
     private readonly listenerRepository: ListenerRepository;
-    private readonly registry: PlatformRegistryReaderInterface;
 
-    constructor(
-        listenerRepository: ListenerRepository,
-        registry: PlatformRegistryReaderInterface
-    ) {
+    constructor(listenerRepository: ListenerRepository) {
         this.listenerRepository = listenerRepository;
-        this.registry = registry;
     }
 
     /**
@@ -59,11 +51,9 @@ export class ListenerRegistrationService {
      * Register the main interaction router that routes all interactions
      */
     private registerInteractionRouter(): number {
-        this.listenerRepository.registerInteractionListener(
-            async (interaction: Interaction) => {
-                await this.routeInteraction(interaction);
-            }
-        );
+        this.listenerRepository.registerInteractionListener(async (interaction: Interaction) => {
+            await this.routeInteraction(interaction);
+        });
 
         return 1;
     }
@@ -72,7 +62,7 @@ export class ListenerRegistrationService {
      * Register all event listeners discovered in registry
      */
     private registerEventListeners(failures: RegistrationFailure[]): number {
-        const eventDescriptors = this.registry.list(REGISTRY_KINDS.EVENT);
+        const eventDescriptors = registry.list(REGISTRY_KINDS.EVENT).filter(isEventDescriptor);
         let registeredEventListeners = 0;
 
         for (const descriptor of eventDescriptors) {
@@ -91,9 +81,9 @@ export class ListenerRegistrationService {
         return registeredEventListeners;
     }
 
-    private registerEventListener(descriptor: DescriptorInterface<typeof REGISTRY_KINDS.EVENT>): void {
+    private registerEventListener(descriptor: EventDescriptorInterface): void {
         const eventName = this.extractEventName(descriptor.key);
-        const once = descriptor.metadata.once;
+        const once = descriptor.metadata.once as boolean | undefined;
 
         this.listenerRepository.registerEventHandlerClass(
             eventName,
@@ -107,15 +97,7 @@ export class ListenerRegistrationService {
      */
     private async routeInteraction(interaction: Interaction): Promise<unknown> {
         try {
-            const key = this.getInteractionKey(interaction);
-            let descriptor = this.registry.get(key);
-
-            // For autocomplete, fall back to the base command key (without option suffix)
-            // so that @Autocomplete('cmd') handlers catch all options of that command
-            if (!descriptor && interaction.type === 'autocomplete' && interaction.commandName) {
-                const fallbackKey = Keys.autocomplete(Keys.slash(interaction.commandName));
-                descriptor = this.registry.get(fallbackKey);
-            }
+            const { key, descriptor } = this.resolveInteractionDescriptor(interaction);
 
             if (!descriptor) {
                 console.warn(`⚠️  No handler found for interaction key: ${key}`);
@@ -136,41 +118,27 @@ export class ListenerRegistrationService {
     private getInteractionKey(interaction: Interaction): string {
         switch (interaction.type) {
             case 'slash':
-                if (!interaction.commandName) throw new Error('Command name required for slash interaction');
                 return Keys.slash(
-                    interaction.commandName,
+                    this.requireCommandName(interaction, 'slash'),
                     interaction.subcommandGroup,
                     interaction.subcommand
                 );
 
             case 'context:user':
-                if (!interaction.commandName) throw new Error('Command name required for context user interaction');
-                return Keys.contextUser(interaction.commandName);
+                return Keys.contextUser(this.requireCommandName(interaction, 'context user'));
 
             case 'context:message':
-                if (!interaction.commandName) throw new Error('Command name required for context message interaction');
-                return Keys.contextMessage(interaction.commandName);
+                return Keys.contextMessage(this.requireCommandName(interaction, 'context message'));
 
             case 'component':
-                const customId = interaction.customId ?? interaction.state?.customId;
-                if (typeof customId !== 'string') {
-                    throw new Error('customId must be a string');
-                }
-                const namespace = this.componentNamespaceFromType(interaction.componentType ?? interaction.state?.componentType);
-                if (namespace) {
-                    const namespacedKey = Keys.component({ namespace, id: customId });
-                    // Backward-compatibility: fall back to legacy key when only old registrations exist.
-                    return this.registry.has(namespacedKey)
-                        ? namespacedKey
-                        : Keys.component({ id: customId });
-                }
-                return Keys.component({ id: customId });
+                return this.getComponentInteractionKey(interaction);
 
             case 'autocomplete':
-                if (!interaction.commandName) throw new Error('Command name required for autocomplete interaction');
-                if (!interaction.focusedOption) throw new Error('Focused option required for autocomplete interaction');
+                if (!interaction.focusedOption) {
+                    throw new Error('Focused option required for autocomplete interaction');
+                }
                 return Keys.autocomplete(
-                    Keys.slash(interaction.commandName),
+                    Keys.slash(this.requireCommandName(interaction, 'autocomplete')),
                     interaction.focusedOption.name
                 );
 
@@ -180,38 +148,81 @@ export class ListenerRegistrationService {
         }
     }
 
-    /**
-     * Execute handler for interaction using the standard handle method
-     * Type-safe execution using generic K to ensure interaction type matches handler
-     *
-     * Note: Cast is necessary because TypeScript can't statically prove that the runtime
-     * interaction type matches the handler's expected type, even though we ensure this
-     * through the registry lookup by interaction key.
-     */
-    private async executeHandler<K extends Kind>(
-        descriptor: DescriptorInterface<K>,
+    private resolveInteractionDescriptor(
+        interaction: Interaction
+    ): { key: string; descriptor: InteractionDescriptorInterface | undefined } {
+        const key = this.getInteractionKey(interaction);
+        const descriptor = this.lookupInteractionDescriptor(key, interaction);
+        return { key, descriptor };
+    }
+
+    private lookupInteractionDescriptor(
+        key: string,
+        interaction: Interaction
+    ): InteractionDescriptorInterface | undefined {
+        const descriptor = registry.get(key);
+        if (descriptor && !isEventDescriptor(descriptor)) {
+            return descriptor;
+        }
+
+        // For autocomplete, fall back to the base command key (without option suffix)
+        // so that @Autocomplete('cmd') handlers catch all options of that command
+        if (interaction.type !== 'autocomplete' || !interaction.commandName) {
+            return undefined;
+        }
+
+        const fallbackKey = Keys.autocomplete(Keys.slash(interaction.commandName));
+        const fallback = registry.get(fallbackKey);
+        return fallback && !isEventDescriptor(fallback) ? fallback : undefined;
+    }
+
+    private getComponentInteractionKey(interaction: Interaction): string {
+        const customId = interaction.customId ?? interaction.state?.customId;
+        if (typeof customId !== 'string') {
+            throw new Error('customId must be a string');
+        }
+
+        const namespace = this.componentNamespaceFromType(
+            interaction.componentType ?? interaction.state?.componentType
+        );
+
+        if (!namespace) {
+            return Keys.component({ id: customId });
+        }
+
+        const namespacedKey = Keys.component({ namespace, id: customId });
+        // Backward-compatibility: fall back to legacy key when only old registrations exist.
+        return registry.has(namespacedKey)
+            ? namespacedKey
+            : Keys.component({ id: customId });
+    }
+
+    private requireCommandName(interaction: Interaction, interactionKind: string): string {
+        if (!interaction.commandName) {
+            throw new Error(`Command name required for ${interactionKind} interaction`);
+        }
+
+        return interaction.commandName;
+    }
+
+    private async executeHandler(
+        descriptor: InteractionDescriptorInterface,
         interaction: Interaction
     ): Promise<unknown> {
-        const HandlerClass = descriptor.handlerClass;
-        const handler = new HandlerClass();
-
-        // Runtime guarantee: interaction type matches handler because we looked up
-        // the handler using a key derived from the interaction type
-        return handler.handle(interaction as any);
+        const handler = new descriptor.handlerClass();
+        return handler.handle(interaction);
     }
 
     /**
      * Extract event name from registry key
      */
-    private extractEventName(key: string): PlatformEventKey {
+    private extractEventName(key: string): string {
         const parsed = Keys.parseKey(key);
         if (!parsed || parsed.type !== 'evt') {
             throw new Error(`Invalid event key: ${key}`);
         }
 
-        // Event keys are created through typed decorators (@Event), so this cast
-        // reflects the compile-time contract already enforced at registration.
-        return parsed.parts.join('.') as PlatformEventKey;
+        return parsed.parts.join('.');
     }
 
     /**
@@ -233,8 +244,8 @@ export class ListenerRegistrationService {
         attachedEventListeners: number,
         failures: RegistrationFailure[]
     ): void {
-        const summary = this.registry.size();
-        const discoveredEventListeners = this.registry.size(REGISTRY_KINDS.EVENT);
+        const summary = registry.size();
+        const discoveredEventListeners = registry.size(REGISTRY_KINDS.EVENT);
         const discoveredInteractionHandlers = summary - discoveredEventListeners;
 
         console.log(`✅ Attached ${totalListeners} runtime listeners:`);
@@ -283,21 +294,21 @@ export class ListenerRegistrationService {
     } {
         // Sum all component kinds
         const componentCount =
-            this.registry.size(REGISTRY_KINDS.STRING_SELECT) +
-            this.registry.size(REGISTRY_KINDS.USER_SELECT) +
-            this.registry.size(REGISTRY_KINDS.ROLE_SELECT) +
-            this.registry.size(REGISTRY_KINDS.CHANNEL_SELECT) +
-            this.registry.size(REGISTRY_KINDS.MENTIONABLE_SELECT) +
-            this.registry.size(REGISTRY_KINDS.BUTTON) +
-            this.registry.size(REGISTRY_KINDS.MODAL);
+            registry.size(REGISTRY_KINDS.STRING_SELECT) +
+            registry.size(REGISTRY_KINDS.USER_SELECT) +
+            registry.size(REGISTRY_KINDS.ROLE_SELECT) +
+            registry.size(REGISTRY_KINDS.CHANNEL_SELECT) +
+            registry.size(REGISTRY_KINDS.MENTIONABLE_SELECT) +
+            registry.size(REGISTRY_KINDS.BUTTON) +
+            registry.size(REGISTRY_KINDS.MODAL);
 
         return {
-            events: this.registry.size(REGISTRY_KINDS.EVENT),
-            slashCommands: this.registry.size(REGISTRY_KINDS.SLASH),
-            contextMenus: this.registry.size(REGISTRY_KINDS.CONTEXT_USER) + this.registry.size(REGISTRY_KINDS.CONTEXT_MESSAGE),
+            events: registry.size(REGISTRY_KINDS.EVENT),
+            slashCommands: registry.size(REGISTRY_KINDS.SLASH),
+            contextMenus: registry.size(REGISTRY_KINDS.CONTEXT_USER) + registry.size(REGISTRY_KINDS.CONTEXT_MESSAGE),
             components: componentCount,
-            autocomplete: this.registry.size(REGISTRY_KINDS.AUTOCOMPLETE),
-            total: this.registry.size()
+            autocomplete: registry.size(REGISTRY_KINDS.AUTOCOMPLETE),
+            total: registry.size()
         };
     }
 }

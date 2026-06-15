@@ -1,7 +1,6 @@
 import type { HandlerInterface } from "../HandlerInterface.js";
-import { REGISTRY_KINDS } from "../../registry/types.js";
 
-export interface AutocompleteHandler extends HandlerInterface<typeof REGISTRY_KINDS.AUTOCOMPLETE> {
+export interface AutocompleteHandler extends HandlerInterface {
     name: string;
     commandName: string;
 }
