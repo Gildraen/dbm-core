@@ -117,4 +117,18 @@ describe("RegisterListeners", () => {
             "❌ Failed to register listeners with Discord: Registry unavailable"
         );
     });
+
+    test("uses registry from explicit RuntimeContext when provided", async () => {
+        mocks.getEnabledModules.mockReturnValue([]);
+        mocks.registerDiscoveredListeners.mockReturnValue(0);
+        vi.spyOn(console, "log").mockImplementation(() => undefined);
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        const explicitRegistry = { id: "explicit" };
+        const listenerRepository = {} as ListenerRepository;
+        const useCase = new RegisterListeners(listenerRepository, { registry: explicitRegistry as never });
+        await useCase.execute();
+
+        expect(mocks.ListenerRegistrationService).toHaveBeenCalledWith(listenerRepository, explicitRegistry);
+    });
 });
