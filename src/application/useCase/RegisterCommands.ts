@@ -3,12 +3,14 @@ import { loadModule } from "app/domain/service/ModuleLoader.js";
 import { CommandRegistrationService } from "app/domain/service/CommandRegistrationService.js";
 import type { CommandRepository } from "app/domain/interface/repository/CommandRepository.js";
 import { registry } from "app/domain/registry/RegistryProvider.js";
+import type { RuntimeContext } from "app/application/interface/RuntimeContext.js";
 
 export class RegisterCommands {
     private readonly commandRegistrationService: CommandRegistrationService;
 
-    public constructor(commandRepository: CommandRepository) {
-        this.commandRegistrationService = new CommandRegistrationService(commandRepository, registry);
+    public constructor(commandRepository: CommandRepository, context?: RuntimeContext) {
+        const activeRegistry = context?.registry ?? registry;
+        this.commandRegistrationService = new CommandRegistrationService(commandRepository, activeRegistry);
     }
 
     public async execute() {

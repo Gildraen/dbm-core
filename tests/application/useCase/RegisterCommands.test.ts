@@ -111,4 +111,17 @@ describe("RegisterCommands", () => {
             "❌ Failed to register commands with Discord: Discord API unavailable"
         );
     });
+
+    test("uses registry from explicit RuntimeContext when provided", async () => {
+        mocks.getEnabledModules.mockReturnValue([]);
+        mocks.registerDiscoveredCommands.mockResolvedValue(undefined);
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        const explicitRegistry = { id: "explicit" };
+        const commandRepository = {} as CommandRepository;
+        const useCase = new RegisterCommands(commandRepository, { registry: explicitRegistry as never });
+        await useCase.execute();
+
+        expect(mocks.CommandRegistrationService).toHaveBeenCalledWith(commandRepository, explicitRegistry);
+    });
 });
