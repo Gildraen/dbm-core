@@ -275,6 +275,22 @@ export const economyModule = new EconomyModule();
 
 ## 📚 API Reference
 
+### Public API Surface
+
+The library exports only what module developers need:
+
+**Stable (Public):**
+- `ModuleInterface` — Contract for module packages
+- Decorators — `@SlashCommand`, `@Event`, `@UserContextMenu`, `@MessageContextMenu`, `@StringSelect`, `@UserSelect`, `@RoleSelect`, `@ChannelSelect`, `@MentionableSelect`, `@Autocomplete`
+- `registerApplication(client)` — Bootstrap entry point for the host bot
+
+**Not Public (Infrastructure):**
+- Use cases (`RegisterCommands`, `RegisterListeners`)
+- Repository interfaces/implementations
+- Registry management and initialization
+
+This boundary ensures module developers focus on authoring, while orchestration details remain internal.
+
 ### Core Types
 
 ```typescript
@@ -293,14 +309,17 @@ type OperationReport = {
 };
 ```
 
-### Use Cases
+### Decorators
 
 ```typescript
 import type { ModuleInterface } from "@gildraen/dbm-core";
 import { SlashCommand, Event } from "@gildraen/dbm-core";
 
-// Public API focuses on module authoring primitives
-// (ModuleInterface and decorators).
+@SlashCommand("ping", "Replies with pong")
+export class PingCommand { ... }
+
+@Event("ready")
+export class ReadyHandler { ... }
 ```
 
 ## 🧪 Development
