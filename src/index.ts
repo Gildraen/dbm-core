@@ -1,13 +1,11 @@
 import { type ModuleInterface } from "app/domain/interface/ModuleInterface.js";
 import { type Interaction } from "app/domain/interface/InteractionHandler.js";
-import { registerApplication, registerListeners, registerCommands } from "app/infrastructure/runtime/Runtime.js";
+import { registerApplication } from "app/infrastructure/runtime/Runtime.js";
 
 export {
     type ModuleInterface,
     type Interaction,
     registerApplication,
-    registerListeners,
-    registerCommands,
 };
 
 // Decorators
